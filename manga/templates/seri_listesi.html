@@ -1,0 +1,422 @@
+{% load static %}
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tüm Seriler - OpenToon</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <script>
+        (function() {
+            const storedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-bs-theme', storedTheme);
+        })();
+    </script>
+
+    <style>
+        /* --- PREMIUM TEMA DEĞİŞKENLERİ --- */
+        :root { 
+            --primary: #7248f9; --bg-body: #0f0f12; --bg-card: #18181c; 
+            --text-main: #ffffff; --text-muted: #a0a0a0; --border-color: #26262e;
+            --nav-bg: rgba(15, 15, 18, 0.95);
+        }
+        [data-bs-theme="light"] { 
+            --bg-body: #f4f7f6; --bg-card: #ffffff; --text-main: #2d3436; 
+            --text-muted: #636e72; --border-color: #e0e0e0; --nav-bg: rgba(255, 255, 255, 0.95);
+        }
+        
+        body { background-color: var(--bg-body); color: var(--text-main); font-family: 'Inter', sans-serif; padding-top: 80px; padding-bottom: 50px; transition: 0.3s; }
+        h1, h2, h3, h4, h5, h6, .navbar-brand { font-family: 'Outfit', sans-serif; }
+        a { text-decoration: none; }
+        
+        /* NAVBAR */
+        .navbar { background-color: var(--nav-bg); border-bottom: 1px solid var(--border-color); backdrop-filter: blur(10px); }
+        .navbar-brand { color: var(--text-main) !important; font-weight: 700; }
+        .nav-link { color: var(--text-muted) !important; }
+        .nav-link:hover { color: var(--primary) !important; }
+
+        .dropdown-item.active, .dropdown-item:active { background-color: var(--primary) !important; color: #fff !important; }
+        .dropdown-item:hover { background-color: rgba(114, 72, 249, 0.1); color: var(--primary); }
+
+        /* KÜTÜPHANE BAŞLIK ALANI */
+        .library-header {
+            padding: 40px 0 30px;
+            margin-bottom: 40px;
+            border-bottom: 1px solid var(--border-color);
+            background: linear-gradient(0deg, var(--bg-body) 0%, rgba(114, 72, 249, 0.05) 100%);
+        }
+
+        /* BÖLÜM BAŞLIKLARI (ESKİ KALINTILAR SİLİNDİ) */
+
+        /* FILTER PILLS (KATEGORİ HAPLARI) */
+        .filter-nav { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 40px; }
+        .filter-btn {
+            background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: var(--text-muted);
+            padding: 10px 24px; border-radius: 30px; font-weight: 600; font-size: 0.95rem; cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        [data-bs-theme="light"] .filter-btn { background: rgba(0,0,0,0.02); }
+        .filter-btn:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-2px); }
+        .filter-btn.active {
+            background: var(--primary); color: #fff; border-color: var(--primary);
+            box-shadow: 0 5px 20px rgba(114, 72, 249, 0.4);
+        }
+
+        /* AKILLI GRID SİSTEMİ (PROFESYONEL) */
+        .premium-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .premium-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
+            .section-title { font-size: 1.2rem; }
+        }
+        @media (max-width: 400px) {
+            .premium-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
+        }
+
+        /* PREMIUM MANGA KARTI */
+        .premium-card {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            aspect-ratio: 2/3; /* Kusursuz manga kapağı oranı */
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .premium-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--primary);
+            box-shadow: 0 15px 30px rgba(114, 72, 249, 0.25);
+        }
+        
+        .premium-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s ease;
+        }
+        .premium-card:hover img {
+            transform: scale(1.1);
+        }
+
+        /* ROZETLER */
+        .badge-tl {
+            position: absolute; top: 10px; left: 10px; z-index: 2;
+            background: rgba(0,0,0,0.7); color: #fff; padding: 4px 8px; 
+            border-radius: 6px; font-size: 0.7rem; font-weight: 700; 
+            backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.1);
+        }
+        .badge-tr {
+            position: absolute; top: 10px; right: 10px; z-index: 2;
+            padding: 4px 8px; border-radius: 6px; font-size: 0.65rem; font-weight: 800; 
+            color: #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        .bg-final { background: #ff4d4d; }
+        .bg-devam { background: #2ecc71; }
+        .bg-ara { background: #f39c12; }
+
+        /* KART ÜZERİ BİLGİLER (GRADIENT) */
+        .premium-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 40%, transparent 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 15px 12px;
+            pointer-events: none;
+        }
+        
+       .premium-title {
+            color: #fff;
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2; /* YENİ: VS Code'u mutlu eden standart satır :) */
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            line-height: 1.3;
+        }
+
+        .premium-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.7);
+            font-weight: 600;
+        }
+        .premium-meta i { font-size: 0.7rem; }
+
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.0.0/css/flag-icons.min.css"/>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg fixed-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="{% url 'home' %}">
+                <i class="fa-solid fa-arrow-left me-2 text-primary"></i> Ana Sayfa
+            </a>
+        </div>
+    </nav>
+
+    <div class="library-header text-center">
+        <div class="container">
+            <h1 class="display-5 fw-bolder mb-2" style="letter-spacing: -1px;"><i class="fa-solid fa-book-open text-primary me-3"></i>Tüm Seriler</h1>
+            <p class="text-muted mb-0">Aradığın efsaneyi burada bul. Binlerce bölüm seni bekliyor.</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- KONTROL PANELİ (FİLTRE VE SIRALAMA) -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3">
+            <!-- FİLTRE BUTONLARI -->
+            <div class="filter-nav mb-0" id="filterNav">
+                <button class="filter-btn active" data-filter="all"><i class="fa-solid fa-layer-group me-2"></i>Tümü</button>
+                <button class="filter-btn" data-filter="manga"><i class="fa-solid fa-book-open me-2"></i>Japon Mangaları</button>
+                <button class="filter-btn" data-filter="webtoon"><i class="fa-solid fa-mobile-screen me-2"></i>Webtoon / Manhwa</button>
+                <button class="filter-btn" data-filter="manhua"><i class="fa-solid fa-dragon me-2"></i>Çin Manhua</button>
+            </div>
+            
+            <!-- SIRALAMA -->
+            <select class="form-select border-secondary" id="sortSelect" style="width: auto; min-width: 220px; border-radius: 20px; background-color: var(--bg-card); color: var(--text-main);">
+                <option value="newest">En Yeniler (Eklenme Tarihi) 🆕</option>
+                <option value="views">En Çok Okunanlar 🔥</option>
+                <option value="rating">En Yüksek Puanlılar ⭐️</option>
+            </select>
+        </div>
+
+        <!-- MANGALAR BURAYA YÜKLENECEK -->
+        <div class="premium-grid" id="seriesGrid">
+            {% for seri in tum_seriler %}
+            <div class="grid-item" data-id="{{ forloop.counter }}" data-views="{{ seri.views }}" data-rating="{{ seri.average_rating|default:'0' }}" data-type="{% if seri.type == 'manhwa' %}webtoon{% else %}{{ seri.type|lower }}{% endif %}" style="transition: opacity 0.3s ease, transform 0.3s ease;">
+                <a href="{% url 'manga_detay' seri.slug %}">
+                    <div class="premium-card">
+                        <span class="badge-tl">{{ seri.type|upper }}</span>
+                        {% if seri.status == 'tamamlandi' %}<span class="badge-tr bg-final">FİNAL</span>
+                        {% elif seri.status == 'ara' %}<span class="badge-tr bg-ara">ARA</span>
+                        {% else %}<span class="badge-tr bg-devam">DEVAM</span>{% endif %}
+                        
+                        {% if seri.cover_image %}<img src="{{ seri.cover_image.url }}" loading="lazy">
+                        {% else %}<div class="bg-secondary h-100 d-flex align-items-center justify-content-center"><i class="fa-solid fa-image fa-2x opacity-50"></i></div>{% endif %}
+                        
+                        <div class="premium-overlay">
+                            <div class="premium-title">{{ seri.title }}</div>
+                            <div class="premium-meta">
+                                <span class="text-warning"><i class="fa-solid fa-star me-1"></i>{{ seri.average_rating|default:"0.0" }}</span>
+                                <span class="text-info"><i class="fa-solid fa-eye me-1"></i>{{ seri.views|intword }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% empty %}
+                <div class="w-100 text-center text-muted py-5" style="grid-column: 1 / -1;">
+                    <i class="fa-solid fa-book-open fs-1 opacity-25 mb-3"></i>
+                    <p>Sistemde henüz hiç seri bulunamadı.</p>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <!-- YÜKLENİYOR BELİRTECİ (INFINITE SCROLL) -->
+        <div id="infiniteScrollLoader" class="text-center py-4" style="color: var(--primary); display: none;">
+            <i class="fa-solid fa-spinner fa-spin fs-2"></i>
+            <p class="mt-2 fw-bold opacity-75">Daha Fazla Seri Yükleniyor...</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // DİNAMİK FİLTRELEME, SIRALAMA VE SONSUZ KAYDIRMA (INFINITE SCROLL)
+        document.addEventListener('DOMContentLoaded', function() {
+            const filterBtns = document.querySelectorAll('.filter-btn');
+            const items = Array.from(document.querySelectorAll('.grid-item')); // Array'a çevir
+            const grid = document.getElementById('seriesGrid');
+            const sortSelect = document.getElementById('sortSelect');
+            const loader = document.getElementById('infiniteScrollLoader');
+            
+            let currentLimit = 16; // Başlangıçta 16 manga yükle
+            const PER_PAGE = 16;   // Her aşağı kaydırmada 16 tane daha yükle
+
+            // FİLTRE BUTONLARI
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    filterBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentLimit = PER_PAGE; // Filtre değişince limiti sıfırla
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    applyFilterAndSort();
+                });
+            });
+
+            // SIRALAMA DEĞİŞİMİ
+            sortSelect.addEventListener('change', () => {
+                currentLimit = PER_PAGE; // Sıralama değişince limiti sıfırla
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                applyFilterAndSort();
+            });
+
+            function applyFilterAndSort() {
+                const activeFilter = document.querySelector('.filter-btn.active').getAttribute('data-filter');
+                const sortBy = sortSelect.value;
+
+                // 1. Önce Filtrele
+                let filteredItems = items.filter(item => {
+                    return activeFilter === 'all' || item.getAttribute('data-type') === activeFilter;
+                });
+
+                // 2. Ardından DOM'da Sırala
+                filteredItems.sort((a, b) => {
+                    if (sortBy === 'views') {
+                        return parseFloat(b.getAttribute('data-views')) - parseFloat(a.getAttribute('data-views'));
+                    } else if (sortBy === 'rating') {
+                        return parseFloat(b.getAttribute('data-rating')) - parseFloat(a.getAttribute('data-rating'));
+                    } else {
+                        return parseFloat(a.getAttribute('data-id')) - parseFloat(b.getAttribute('data-id'));
+                    }
+                });
+
+                // 3. Ekrana Çiz (Limit dahilinde ve Görsel Animasyonla)
+                grid.innerHTML = ''; // Grid'i temizle
+                
+                filteredItems.forEach((item, index) => {
+                    if (index < currentLimit) {
+                        grid.appendChild(item);
+                        item.style.display = 'block';
+                        // Çok kısa bir boşluktan sonra tekrar opak ve scale
+                        setTimeout(() => {
+                            item.style.opacity = '1';
+                            item.style.transform = 'scale(1)';
+                        }, 20);
+                    } else {
+                        // Limitin dışındakileri DOM'a ekleme veya ekle gizli tut (Performans için DOM'dan izole)
+                        item.style.opacity = '0';
+                        item.style.transform = 'scale(0.9)';
+                        item.style.display = 'none';
+                    }
+                });
+
+                // Loader göster/gizle
+                if(filteredItems.length > currentLimit) {
+                    loader.style.display = 'block';
+                } else {
+                    loader.style.display = 'none';
+                }
+            }
+
+            // Sayfa açılışında çalıştır
+            applyFilterAndSort();
+
+            // SONSUZ KAYDIRMA INTERSECTION OBSERVER (aşağı indikçe renderla)
+            const observer = new IntersectionObserver((entries) => {
+                if (entries[0].isIntersecting && loader.style.display === 'block') {
+                    // Kullanıcı loader'ı gördü!
+                    loader.innerHTML = "<i class='fa-solid fa-spinner fa-spin fs-2'></i><p class='mt-2 fw-bold opacity-75'>Daha Fazla Seri Yükleniyor...</p>";
+                    
+                    setTimeout(() => {
+                        currentLimit += PER_PAGE;
+                        applyFilterAndSort();
+                    }, 400); // 0.4 Saniye hissiyatı vermek için bekle
+                }
+            }, { threshold: 0.1 });
+
+            observer.observe(loader);
+        });
+
+        // TEMA YÖNETİMİ
+        (() => {
+            'use strict'
+            const getStoredTheme = () => localStorage.getItem('theme')
+            const setStoredTheme = theme => localStorage.setItem('theme', theme)
+            const getPreferredTheme = () => {
+                const storedTheme = getStoredTheme()
+                if (storedTheme) { return storedTheme }
+                return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+            }
+            const setTheme = theme => {
+                if (theme === 'auto') {
+                    document.documentElement.setAttribute('data-bs-theme', (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'))
+                } else {
+                    document.documentElement.setAttribute('data-bs-theme', theme)
+                }
+            }
+            setTheme(getPreferredTheme())
+            const showActiveTheme = (theme) => {
+                const activeIcon = document.querySelector('#theme-icon-active')
+                if (!activeIcon) return
+                const iconMap = { 'light': 'fa-sun', 'dark': 'fa-moon', 'auto': 'fa-circle-half-stroke' }
+                activeIcon.className = `fa-solid ${iconMap[theme] || 'fa-circle-half-stroke'}`;
+                document.querySelectorAll('[data-bs-theme-value]').forEach(el => el.classList.remove('active'))
+                const btn = document.querySelector(`[data-bs-theme-value="${theme}"]`)
+                if (btn) btn.classList.add('active')
+            }
+            window.addEventListener('DOMContentLoaded', () => {
+                showActiveTheme(getStoredTheme() || 'auto')
+                document.querySelectorAll('[data-bs-theme-value]').forEach(toggle => {
+                    toggle.addEventListener('click', () => {
+                        const theme = toggle.getAttribute('data-bs-theme-value')
+                        setStoredTheme(theme)
+                        setTheme(theme)
+                        showActiveTheme(theme)
+                    })
+                })
+            })
+        })()
+    </script>
+    <script>
+        // BİLDİRİM SİSTEMİ JS
+        function loadNotifications() {
+            const authStatus = document.getElementById('authStatus');
+            if(!authStatus || authStatus.value !== 'true') return;
+            fetch('/api/notifications/').then(r=>r.json()).then(d=> {
+                if(d.status === 'success') {
+                    const badge = document.getElementById('notifBadge');
+                    const list = document.getElementById('notifList');
+                    if(badge && list) {
+                        if(d.unread_count > 0) {
+                            badge.innerText = d.unread_count;
+                            badge.classList.remove('d-none');
+                        }
+                        let html = '<li><h6 class="dropdown-header">Bildirimler</h6></li>';
+                        if(d.notifications.length === 0) {
+                            html += '<li><span class="dropdown-item text-muted small">Bildirim yok.</span></li>';
+                        } else {
+                            d.notifications.forEach(n => {
+                                html += `<li><a class="dropdown-item text-wrap small ${n.is_read ? 'text-muted' : 'fw-bold'}" href="${n.link}" style="border-bottom: 1px solid var(--border-color, #eee); padding: 10px;"><i class="fa-solid fa-circle-info me-2 text-primary"></i>${n.message}<br><small class="text-secondary">${n.created_at}</small></a></li>`;
+                            });
+                        }
+                        list.innerHTML = html;
+                    }
+                }
+            }).catch(e => console.log(e));
+        }
+
+        function markNotificationsRead() {
+            const badge = document.getElementById('notifBadge');
+            if(badge && !badge.classList.contains('d-none')) {
+                const csrfToken = document.getElementById('csrfToken');
+                if(csrfToken) {
+                    fetch('/api/notifications/mark-read/', {method:'POST', headers:{'X-CSRFToken':csrfToken.value}});
+                    badge.classList.add('d-none');
+                    badge.innerText = '0';
+                }
+            }
+        }
+        document.addEventListener('DOMContentLoaded', loadNotifications);
+    </script>
+
+</body>
+</html>

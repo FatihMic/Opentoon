@@ -1,0 +1,1546 @@
+{% load static %}
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <link rel="icon" href="{% static 'logo.png' %}" type="image/png">
+
+    <title>OpenToon - Webtoon & Manga</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet">
+
+    <script>
+        (function () {
+            const getStoredTheme = () => localStorage.getItem('theme');
+            const getPreferredTheme = () => {
+                const storedTheme = getStoredTheme();
+                if (storedTheme) { return storedTheme; }
+                return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            };
+            const setTheme = theme => {
+                if (theme === 'auto') {
+                    document.documentElement.setAttribute('data-bs-theme', (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+                } else {
+                    document.documentElement.setAttribute('data-bs-theme', theme);
+                }
+            };
+            setTheme(getPreferredTheme());
+        })();
+    </script>
+
+    <style>
+        :root {
+            --primary: #8a2be2;
+            --primary-hover: #9d50e5;
+            --accent: #ffae00;
+            --bg-body: #121212;
+            --bg-nav: #181818;
+            --bg-card: #1e1e1e;
+            --bg-input: #252525;
+            --bg-footer: #0e0e0e;
+            --text-main: #f0f0f0;
+            --text-muted: #a0a0a0;
+            --border: #2d2d2d;
+            --shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        [data-bs-theme="light"] {
+            --bg-body: #f0f2f5;
+            --bg-nav: #ffffff;
+            --bg-card: #ffffff;
+            --bg-input: #e9ecef;
+            --bg-footer: #e4e6eb;
+            --text-main: #1a1a1a;
+            --text-muted: #666;
+            --border: #dee2e6;
+            --shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            padding-top: 80px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            transition: 0.3s;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        .navbar-brand {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            background-color: var(--bg-nav);
+            border-bottom: 1px solid var(--border);
+            min-height: 80px;
+        }
+
+        .navbar-brand {
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-link {
+            font-weight: 600;
+            color: var(--text-muted) !important;
+            transition: 0.2s;
+            font-size: 0.95rem;
+            margin: 0 5px;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            color: var(--text-main) !important;
+            color: var(--primary) !important;
+        }
+
+        @media (max-width: 991px) {
+            #navContent {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                width: 100%;
+                background-color: var(--bg-nav);
+                border-bottom: 1px solid var(--border);
+                box-shadow: 0 15px 25px rgba(0, 0, 0, 0.5);
+                z-index: 1050;
+            }
+
+            .nav-content-inner {
+                padding: 20px;
+            }
+
+            .navbar-nav {
+                gap: 15px !important;
+            }
+        }
+
+        /* SEARCH */
+        .search-group {
+            display: flex;
+            align-items: center;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 8px 15px;
+            transition: 0.3s;
+            width: 100%;
+        }
+
+        .search-group:focus-within {
+            border-color: var(--primary);
+            background: var(--bg-card);
+        }
+
+        .search-input {
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            width: 100%;
+            outline: none;
+            font-size: 16px !important;
+        }
+
+        .btn-filter {
+            color: var(--text-muted);
+            padding: 5px;
+            margin-right: 10px;
+            transition: 0.2s;
+        }
+
+        .btn-filter:hover {
+            color: var(--primary);
+        }
+
+        .btn-search {
+            color: var(--text-main);
+            background: transparent;
+            border: none;
+            padding: 0;
+        }
+
+        .btn-search:hover {
+            color: var(--primary);
+        }
+
+        .btn-panel {
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            background: rgba(255, 174, 0, 0.05);
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-panel:hover {
+            background: var(--accent);
+            color: #000;
+            box-shadow: 0 0 15px rgba(255, 174, 0, 0.3);
+        }
+
+        .theme-btn {
+            height: 40px;
+            min-width: 40px;
+            padding: 0 12px;
+            border-radius: 12px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.2s;
+            cursor: pointer;
+        }
+
+        .theme-btn:hover {
+            color: var(--primary);
+            border-color: var(--primary);
+            background: rgba(138, 43, 226, 0.1);
+        }
+
+        .hero-wrap {
+            position: relative;
+            height: 400px;
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 40px;
+            border: 1px solid var(--border);
+        }
+
+        .hero-bg {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            filter: blur(10px) brightness(0.4);
+            transform: scale(1.1);
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            padding: 0 50px;
+            background: linear-gradient(90deg, rgba(18, 18, 18, 0.95) 0%, rgba(18, 18, 18, 0.4) 100%);
+        }
+
+        .hero-poster {
+            height: 320px;
+            width: auto;
+            border-radius: 10px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .section-title {
+            font-weight: 800;
+            font-size: 1.4rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: -0.5px;
+        }
+
+        .section-title i {
+            color: var(--primary);
+        }
+
+        /* YENİ NESİL KART TASARIMI */
+        .premium-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            transition: 0.3s;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .premium-card:hover {
+            transform: translateY(-7px);
+            border-color: var(--primary);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .card-cover-area {
+            position: relative;
+            aspect-ratio: 2/3;
+            overflow: hidden;
+        }
+
+        .card-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: 0.5s;
+        }
+
+        .premium-card:hover .card-img {
+            transform: scale(1.08);
+        }
+
+        /* Bayrak ve Status */
+        .badge-type {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            font-size: 1.1rem;
+            padding: 2px 6px;
+            border-radius: 8px;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 5;
+        }
+
+        .badge-status {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 6px;
+            z-index: 5;
+        }
+
+        .badge-final {
+            background: #ff4d4d;
+            color: white;
+        }
+
+        .badge-devam {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Kaydet Butonu */
+        .fav-btn-card {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .fav-btn-card:hover {
+            background: rgba(0, 0, 0, 0.9);
+            transform: scale(1.1);
+        }
+
+        .fav-btn-card i.liked {
+            color: var(--primary);
+        }
+
+        .card-info-box {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            flex-grow: 1;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 8px;
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .card-meta-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        /* DİKEY LİSTE (SAĞ TARAF İÇİN) */
+        .list-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 18px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            margin-bottom: 10px;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            gap: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .list-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--primary);
+            transform: scaleY(0);
+            transition: 0.3s;
+        }
+
+        .list-item:hover {
+            border-color: var(--primary);
+            transform: translateX(5px);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .list-item:hover::before {
+            transform: scaleY(1);
+        }
+
+        .list-thumb {
+            width: 55px;
+            height: 78px;
+            border-radius: 10px;
+            object-fit: cover;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            border: 2px solid var(--border);
+            transition: 0.3s;
+        }
+
+        .list-item:hover .list-thumb {
+            border-color: var(--primary);
+            transform: scale(1.05);
+        }
+
+        .list-rank {
+            font-weight: 900;
+            font-size: 1.4rem;
+            width: 35px;
+            text-align: center;
+            color: var(--text-muted);
+            margin-right: 5px;
+            font-style: italic;
+        }
+
+        .list-item:nth-child(1) .list-rank {
+            color: #ffd700;
+        }
+
+        .list-item:nth-child(2) .list-rank {
+            color: #c0c0c0;
+        }
+
+        .list-item:nth-child(3) .list-rank {
+            color: #cd7f32;
+        }
+
+        /* FOOTER & DİĞER */
+        footer {
+            background: var(--bg-footer);
+            border-top: 1px solid var(--border);
+            padding: 60px 0;
+            margin-top: auto;
+        }
+
+        .footer-logo {
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: var(--text-main);
+            text-decoration: none;
+            display: block;
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+        }
+
+        .footer-logo span {
+            color: var(--primary);
+        }
+
+        .footer-menu {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .footer-menu a {
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+
+        .footer-menu a:hover {
+            color: var(--primary);
+        }
+
+        .footer-social .social-link {
+            width: 45px;
+            height: 45px;
+            border-radius: 12px;
+            background: var(--bg-card);
+            color: var(--text-main);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: 0.3s;
+            border: 1px solid var(--border);
+        }
+
+        .footer-social .social-link:hover {
+            background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+            color: #fff;
+            border-color: transparent;
+        }
+
+        .live-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+            z-index: 1000;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            display: none;
+            overflow: hidden;
+        }
+
+        .live-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-main);
+            transition: 0.2s;
+        }
+
+        .live-item:hover {
+            background: var(--bg-input);
+        }
+
+        .live-item img {
+            width: 30px;
+            height: 45px;
+            object-fit: cover;
+            margin-right: 10px;
+            border-radius: 4px;
+        }
+
+        /* YENİ NESİL TEMA BUTONU v2 - Daha Zarif ve Minimal */
+        .theme-toggle-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: transparent;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            margin: 0 10px;
+        }
+
+        .theme-toggle-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            box-shadow: 0 0 15px rgba(114, 72, 249, 0.2);
+            transform: rotate(15deg) scale(1.05);
+        }
+
+        .theme-toggle-btn i {
+            font-size: 1.2rem;
+            position: absolute;
+            transition: all 0.4s ease;
+        }
+
+        .theme-toggle-btn .dark-icon {
+            opacity: 0;
+            transform: translateY(-20px) rotate(-90deg);
+        }
+
+        .theme-toggle-btn .light-icon {
+            opacity: 1;
+            transform: translateY(0) rotate(0);
+            color: #f39c12;
+        }
+
+        [data-bs-theme="dark"] .theme-toggle-btn .dark-icon {
+            opacity: 1;
+            transform: translateY(0) rotate(0);
+            color: #f1c40f;
+            text-shadow: 0 0 15px rgba(241, 196, 15, 0.5);
+        }
+
+        [data-bs-theme="dark"] .theme-toggle-btn .light-icon {
+            opacity: 0;
+            transform: translateY(20px) rotate(90deg);
+        }
+
+        [data-bs-theme="dark"] .theme-toggle-btn {
+            border-color: rgba(114, 72, 249, 0.3);
+            background: rgba(114, 72, 249, 0.05);
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.0.0/css/flag-icons.min.css" />
+</head>
+
+<body>
+
+    <input type="hidden" id="authStatus" value="{{ user.is_authenticated|yesno:'true,false' }}">
+    <input type="hidden" id="loginUrl" value="{% url 'login' %}">
+    <input type="hidden" id="csrfToken" value="{{ csrf_token }}">
+
+    <nav class="navbar navbar-expand-lg fixed-top px-lg-4">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="{% url 'home' %}">
+                
+                <span style="color: var(--text-main);">OPEN</span><span style="color: var(--primary);">TOON</span>
+            </a>
+
+            <div class="d-none d-lg-block mx-lg-4 position-relative flex-grow-1" style="max-width: 600px;">
+                <div class="search-group">
+                    <input type="text" id="desktopSearchInput" class="search-input"
+                        placeholder="Manga veya Webtoon ara...">
+                    <a href="{% url 'tum_seriler' %}" class="btn-filter" title="Filtrele"><i
+                            class="fa-solid fa-sliders"></i></a>
+                    <button class="btn-search"><i class="fa-solid fa-search"></i></button>
+                </div>
+                <div id="desktopSearchResults" class="live-results"></div>
+            </div>
+
+            <div class="d-flex align-items-center gap-3 ms-auto d-lg-none">
+                <button class="theme-toggle-btn" id="mobileThemeToggle" aria-label="Temayı Değiştir"
+                    title="Karanlık/Aydınlık">
+                    <i class="fa-solid fa-moon dark-icon"></i>
+                    <i class="fa-solid fa-sun light-icon"></i>
+                </button>
+
+                {% if user.is_authenticated %}
+                <!-- MOBİL BİLDİRİM ZİLİ -->
+                <a href="#" class="position-relative text-decoration-none" data-bs-toggle="dropdown"
+                    onclick="markNotificationsRead()" style="color: var(--text-main) !important;">
+                    <i class="fa-solid fa-bell fs-4"></i>
+                    <span
+                        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none mobile-notif-badge"
+                        style="font-size: 0.65rem;">0</span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end shadow mt-3 border-0"
+                    style="width: 300px; max-height: 400px; overflow-y: auto;" id="notifListMobile">
+                    <li>
+                        <h6 class="dropdown-header">Bildirimler</h6>
+                    </li>
+                </ul>
+                {% endif %}
+
+                <button class="btn border-0 p-2 d-lg-none" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#mobileSearchDropdown" id="mobileSearchToggler"
+                    style="color: var(--text-main) !important;">
+                    <i class="fa-solid fa-search fs-4"></i>
+                </button>
+                <button class="navbar-toggler border-0 p-2 d-lg-none" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navContent" id="hamburgerToggler" style="color: var(--text-main) !important;">
+                    <i class="fa-solid fa-bars fs-3"></i>
+                </button>
+            </div>
+
+            <div class="collapse navbar-collapse flex-grow-0" id="navContent">
+                <div class="nav-content-inner w-100">
+                    <ul class="navbar-nav align-items-lg-center gap-3 gap-lg-4 ms-auto mt-2 mt-lg-0 pb-3 pb-lg-0">
+                        <li class="nav-item"><a class="nav-link active" href="{% url 'home' %}">Ana Sayfa</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'tum_seriler' %}">Tüm Seriler</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'seri_siralamasi' %}">Sıralama</a></li>
+                        <li class="nav-item d-none d-lg-flex align-items-center">
+                            <button class="theme-toggle-btn" id="desktopThemeToggle" aria-label="Temayı Değiştir"
+                                title="Karanlık/Aydınlık">
+                                <i class="fa-solid fa-moon dark-icon"></i>
+                                <i class="fa-solid fa-sun light-icon"></i>
+                            </button>
+                        </li>
+                        {% if user.is_authenticated %}
+                        {% if user.is_superuser or user.groups.all.0.name == 'Yayıncı' %}
+                        <li class="nav-item">
+                            <a href="{% url 'yayinci_paneli' %}" class="btn-panel justify-content-center">
+                                <i class="fa-solid fa-bolt"></i> PANEL
+                            </a>
+                        </li>
+                        {% endif %}
+                        <li class="nav-item dropdown d-lg-none border-top border-secondary pt-3 mt-2">
+                            <a href="#" class="d-flex align-items-center gap-2 text-decoration-none"
+                                data-bs-toggle="dropdown">
+                                {% if user.profile.avatar %}
+                                <img src="{{ user.profile.avatar_url }}"
+                                    style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary);">
+                                {% else %}
+                                <div
+                                    style="width:40px; height:40px; border-radius:50%; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:bold;">
+                                    {{ user.username|make_list|first|upper }}</div>
+                                {% endif %}
+                                <span class="fw-bold" style="color: var(--text-main);">{{ user.username }}</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow mt-2 border-0">
+                                <li>
+                                    <h6 class="dropdown-header">HESABIM</h6>
+                                </li>
+                                <li><a class="dropdown-item" href="{% url 'profil' %}"><i
+                                            class="fa-solid fa-user me-2"></i>Profilim</a></li>
+                                <li><a class="dropdown-item" href="{% url 'profil' %}#favorites"><i
+                                            class="fa-solid fa-bookmark me-2"
+                                            style="color: var(--primary);"></i>Favorilerim</a></li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li>
+                                    <form action="{% url 'logout' %}" method="post">
+                                        {% csrf_token %}
+                                        <button class="dropdown-item text-danger"><i
+                                                class="fa-solid fa-right-from-bracket me-2"></i>Çıkış Yap</button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </li>
+                        {% else %}
+                        <li class="nav-item d-lg-none mt-3 pt-3 border-top border-secondary">
+                            <a href="{% url 'login' %}" class="btn btn-primary rounded-pill px-4 fw-bold w-100">Giriş
+                                Yap</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+
+            <div class="d-none d-lg-flex align-items-center ms-lg-4">
+                {% if user.is_authenticated %}
+                <!-- BİLDİRİM ZİLİ -->
+                <div class="dropdown me-5 pe-3" id="notifDropdown" style="margin-right: 15px;">
+                    <a href="#" class="position-relative text-decoration-none" data-bs-toggle="dropdown"
+                        onclick="markNotificationsRead()">
+                        <i class="fa-solid fa-bell fs-4" style="color: var(--text-muted); transition: 0.2s;"
+                            onmouseover="this.style.color='var(--primary)'"
+                            onmouseout="this.style.color='var(--text-muted)'"></i>
+                        <span
+                            class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none"
+                            id="notifBadge" style="font-size: 0.65rem;">0</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow mt-3 border-0"
+                        style="width: 320px; max-height: 400px; overflow-y: auto;" id="notifList">
+                        <li>
+                            <h6 class="dropdown-header">Bildirimler</h6>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="dropdown">
+                    <a href="#" class="d-flex align-items-center text-decoration-none" data-bs-toggle="dropdown">
+                        {% if user.profile.avatar %}
+                        <img src="{{ user.profile.avatar_url }}"
+                            style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary);">
+                        {% else %}
+                        <div
+                            style="width:40px; height:40px; border-radius:50%; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:bold;">
+                            {{ user.username|make_list|first|upper }}</div>
+                        {% endif %}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow mt-2 border-0">
+                        <li>
+                            <h6 class="dropdown-header">HESABIM</h6>
+                        </li>
+                        <li><a class="dropdown-item" href="{% url 'profil' %}"><i
+                                    class="fa-solid fa-user me-2"></i>Profilim</a></li>
+                        <li><a class="dropdown-item" href="{% url 'profil' %}#favorites"><i
+                                    class="fa-solid fa-bookmark me-2" style="color: var(--primary);"></i>Favorilerim</a>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li>
+                            <form action="{% url 'logout' %}" method="post">
+                                {% csrf_token %}
+                                <button class="dropdown-item text-danger"><i
+                                        class="fa-solid fa-right-from-bracket me-2"></i>Çıkış Yap</button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+                {% else %}
+                <a href="{% url 'login' %}" class="btn btn-primary rounded-pill px-4 fw-bold">Giriş Yap</a>
+                {% endif %}
+            </div>
+
+            <div class="collapse d-lg-none position-absolute w-100" id="mobileSearchDropdown"
+                style="top: 100%; left: 0; z-index: 1040; background: var(--bg-nav); border-bottom: 1px solid var(--border); box-shadow: 0 10px 20px rgba(0,0,0,0.5);">
+                <div class="p-3">
+                    <div class="search-group position-relative">
+                        <input type="text" id="mobileSearchInput" class="search-input" placeholder="Manga ara...">
+                        <a href="{% url 'tum_seriler' %}" class="btn-filter" title="Gelişmiş Filtreleme"><i
+                                class="fa-solid fa-sliders"></i></a>
+                    </div>
+                    <div id="mobileSearchResults" class="live-results position-absolute w-100"
+                        style="left: 0; top: 100%;"></div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    {% if populer_seri %}
+    <div class="container mt-4">
+        <div class="hero-wrap">
+            <div class="hero-bg"
+                style="background-image: url('{% if populer_seri.cover_image %}{{ populer_seri.cover_image.url }}{% else %}/static/default_cover.jpg{% endif %}');">
+            </div>
+            <div class="hero-content">
+                <div class="row w-100 align-items-center">
+                    <div class="col-lg-7 text-white">
+                        <span class="badge bg-danger mb-3 px-3 py-2 text-uppercase fw-bold"><i
+                                class="fa-solid fa-fire me-2"></i>Haftanın Popüleri</span>
+                        <h1 class="display-4 fw-bolder mb-3" style="text-shadow: 0 5px 15px rgba(0,0,0,0.8);">{{ populer_seri.title }}</h1>
+                        <p class="lead text-white-50 mb-4 d-none d-lg-block">{{ populer_seri.description|truncatewords:30 }}</p>
+                        <a href="{% url 'manga_detay' populer_seri.slug %}"
+                            class="btn btn-primary btn-lg rounded-pill px-5 fw-bold shadow-lg border-0">
+                            <i class="fa-solid fa-book-open me-2"></i>HEMEN OKU
+                        </a>
+                    </div>
+                    <div class="col-lg-5 text-end d-none d-lg-block">
+                        <img src="{% if populer_seri.cover_image %}{{ populer_seri.cover_image.url }}{% else %}/static/default_cover.jpg{% endif %}"
+                            class="hero-poster">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="container my-5">
+        <div class="row g-5">
+
+            <!-- SOL SÜTUN (Ana İçerik - %70 Genişlik) -->
+            <div class="col-lg-8 pe-lg-4">
+
+                {% if user.is_authenticated and okuma_gecmisi %}
+                {% endif %}
+
+                <!-- SON YÜKLENEN BÖLÜMLER -->
+                <div class="d-flex align-items-center mb-4">
+                    <span class="section-title"><i class="fa-solid fa-clock-rotate-left text-primary"></i> Son Yüklenen
+                        Bölümler</span>
+                </div>
+
+                <style>
+                    /* YENİ SON YÜKLENENLER KARTI v2 */
+                    .update-card-v2 {
+                        display: flex;
+                        flex-direction: column;
+                        background: var(--bg-card);
+                        border: 1px solid var(--border);
+                        border-radius: 12px;
+                        overflow: hidden;
+                        transition: 0.3s;
+                        height: 100%;
+                    }
+
+                    .update-card-v2:hover {
+                        border-color: var(--primary);
+                        box-shadow: var(--shadow-soft);
+                        transform: translateY(-4px);
+                    }
+
+                    .update-header-v2 {
+                        display: flex;
+                        padding: 12px;
+                        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                    }
+
+                    .update-cover-v2 {
+                        width: 70px;
+                        min-width: 70px;
+                        height: 100px;
+                        border-radius: 8px;
+                        object-fit: cover;
+                        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+                    }
+
+                    .update-title-box-v2 {
+                        margin-left: 12px;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                    }
+
+                    .update-title-v2 {
+                        font-size: 1rem;
+                        font-weight: 700;
+                        color: var(--text-main);
+                        display: -webkit-box;
+                        -webkit-line-clamp: 2;
+                        line-clamp: 2;
+                        -webkit-box-orient: vertical;
+                        overflow: hidden;
+                    }
+
+                    .update-chapters-v2 {
+                        padding: 8px 12px;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 6px;
+                    }
+
+                    .chapter-row-v2 {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        padding: 6px 10px;
+                        background: var(--bg-input);
+                        border-radius: 6px;
+                        text-decoration: none;
+                        transition: 0.2s;
+                    }
+
+                    .chapter-row-v2:hover {
+                        background: rgba(138, 43, 226, 0.15);
+                    }
+
+                    .chapter-text-v2 {
+                        font-size: 0.85rem;
+                        font-weight: 600;
+                        color: var(--text-main);
+                        white-space: nowrap;
+                    }
+
+                    .chapter-row-v2:hover .chapter-text-v2 {
+                        color: var(--primary);
+                    }
+
+                    .chapter-time-v2 {
+                        font-size: 0.75rem;
+                        color: var(--text-muted);
+                        white-space: nowrap;
+                        margin-left: 10px;
+                    }
+                </style>
+
+                <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-4 g-3 mb-5">
+                    {% for item in son_bolum_listesi %}
+                    <div class="col">
+                        <div class="update-card-v2">
+                            <!-- Üst Kısım: Kapak ve Başlık -->
+                            <div class="update-header-v2">
+                                <a href="{% url 'manga_detay' item.seri.slug %}">
+                                    {% if item.seri.cover_image %}
+                                    <img src="{{ item.seri.cover_image.url }}" class="update-cover-v2" loading="lazy">
+                                    {% else %}
+                                    <div class="update-cover-v2"
+                                        style="background: var(--bg-input); display:flex; align-items:center; justify-content:center;">
+                                        <i class="fa-solid fa-image text-muted"></i>
+                                    </div>
+                                    {% endif %}
+                                </a>
+                                <div class="update-title-box-v2">
+                                    <a href="{% url 'manga_detay' item.seri.slug %}" class="text-decoration-none"
+                                        title="{{ item.seri.title }}">
+                                        <div class="update-title-v2">{{ item.seri.title }}</div>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Alt Kısım: Bölümler Listesi -->
+                            <div class="update-chapters-v2">
+                                {% for bolum in item.bolumler %}
+                                <a href="{% url 'manga_oku' item.seri.slug bolum.number %}" class="chapter-row-v2">
+                                    <span class="chapter-text-v2"><i class="fa-solid fa-book-open me-1"
+                                            style="color:var(--primary);"></i> Bölüm {{ bolum.number|floatformat:"-1" }}</span>
+                                    <span class="chapter-time-v2">{{ bolum.uploaded_at|date:"d M Y" }}</span>
+                                </a>
+                                {% empty %}
+                                <div class="text-muted small px-2 py-1">Bölüm yok</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12 text-center text-muted">Son 1 haftada bölüm yüklenmemiş.</div>
+                    {% endfor %}
+                </div>
+
+                <div class="section-header">
+                    <span class="section-title"><i class="fa-solid fa-plus-circle text-success"></i> Yeni
+                        Çıkanlar</span>
+                    <a href="{% url 'seri_listesi' %}"
+                        class="text-muted small text-decoration-none hover-primary">Tümünü Gör <i
+                            class="fa-solid fa-arrow-right ms-1"></i></a>
+                </div>
+
+                <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4 mb-5">
+                    {% for seri in yeni_seriler %}
+                    <div class="col">
+                        <div class="premium-card">
+                            <div class="card-cover-area">
+                                <a href="{% url 'manga_detay' seri.slug %}" class="d-block h-100">
+                                    {% if seri.cover_image %}
+                                    <img src="{{ seri.cover_image.url }}" class="card-img" loading="lazy">
+                                    {% else %}
+                                    <div
+                                        class="d-flex align-items-center justify-content-center h-100 bg-secondary text-white small">
+                                        Resim Yok</div>
+                                    {% endif %}
+                                </a>
+
+                                <span class="badge-type" title="{{ seri.type|upper }}">
+                                    {% if seri.type == 'manga' %}<span class='fi fi-jp'></span>
+                                    {% elif seri.type == 'manhwa' %}<span class='fi fi-kr'></span>
+                                    {% elif seri.type == 'manhua' %}<span class='fi fi-cn'></span>
+                                    {% else %}<i class='fa-solid fa-globe'></i>{% endif %}
+                                </span>
+                                {% if seri.is_new %}
+                                <span class="badge-status badge-devam">YENİ</span>
+                                {% elif seri.status == 'tamamlandi' %}
+                                <span class="badge-status badge-final">FİNAL</span>
+                                {% elif seri.status == 'ara' %}
+                                <span class="badge-status badge-ara">ARA VERDİ</span>
+                                {% else %}
+                                <span class="badge-status badge-devam">DEVAM</span>
+                                {% endif %}
+
+                                <div class="fav-btn-card" onclick="toggleCardLike(event, '{{ seri.slug }}', this)"
+                                    title="Listeme Ekle">
+                                    <i
+                                        class="{% if user in seri.likes.all %}fa-solid liked{% else %}fa-regular{% endif %} fa-bookmark"></i>
+                                </div>
+                            </div>
+
+                            <a href="{% url 'manga_detay' seri.slug %}" class="text-decoration-none">
+                                <div class="card-info-box">
+                                    <h6 class="card-title">{{ seri.title }}</h6>
+                                    <div class="card-meta-row">
+                                        <span title="Eklenme Tarihi"><i class="fa-regular fa-calendar-days me-1"></i>{{ seri.created_at|date:"d M Y" }}</span>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                    {% empty %}<div class="col-12 text-center text-muted">Henüz içerik yok.</div>{% endfor %}
+                </div>
+
+                <div class="section-header">
+                    <span class="section-title"><i class="fa-solid fa-flag-checkered text-danger"></i> Final Yapan
+                        Seriler</span>
+                    <a href="{% url 'tum_seriler' %}?durum=tamamlandi"
+                        class="text-muted small text-decoration-none hover-primary">Tümünü Gör <i
+                            class="fa-solid fa-arrow-right ms-1"></i></a>
+                </div>
+
+                <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4">
+                    {% for seri in final_yapanlar %}
+                    <div class="col">
+                        <div class="premium-card">
+                            <div class="card-cover-area">
+                                <a href="{% url 'manga_detay' seri.slug %}" class="d-block h-100">
+                                    {% if seri.cover_image %}
+                                    <img src="{{ seri.cover_image.url }}" class="card-img" loading="lazy">
+                                    {% else %}
+                                    <div
+                                        class="d-flex align-items-center justify-content-center h-100 bg-secondary text-white small">
+                                        Resim Yok</div>
+                                    {% endif %}
+                                </a>
+
+                                <span class="badge-type" title="{{ seri.type|upper }}">
+                                    {% if seri.type == 'manga' %}<span class='fi fi-jp'></span>
+                                    {% elif seri.type == 'manhwa' %}<span class='fi fi-kr'></span>
+                                    {% elif seri.type == 'manhua' %}<span class='fi fi-cn'></span>
+                                    {% else %}<i class='fa-solid fa-globe'></i>{% endif %}
+                                </span>
+                                {% if seri.is_new %}
+                                <span class="badge-status badge-devam">YENİ</span>
+                                {% elif seri.status == 'tamamlandi' %}
+                                <span class="badge-status badge-final">FİNAL</span>
+                                {% elif seri.status == 'ara' %}
+                                <span class="badge-status badge-ara">ARA VERDİ</span>
+                                {% else %}
+                                <span class="badge-status badge-devam">DEVAM</span>
+                                {% endif %}
+
+                                <div class="fav-btn-card" onclick="toggleCardLike(event, '{{ seri.slug }}', this)"
+                                    title="Listeme Ekle">
+                                    <i
+                                        class="{% if user in seri.likes.all %}fa-solid liked{% else %}fa-regular{% endif %} fa-bookmark"></i>
+                                </div>
+                            </div>
+
+                            <a href="{% url 'manga_detay' seri.slug %}" class="text-decoration-none">
+                                <div class="card-info-box">
+                                    <h6 class="card-title">{{ seri.title }}</h6>
+                                    <div class="card-meta-row">
+                                        <span title="Bitiş Tarihi"><i class="fa-regular fa-calendar-check me-1"></i>{{ seri.created_at|date:"Y" }}</span>
+                                        <span class="text-warning"><i class="fa-solid fa-star me-1"></i>{{ seri.average_rating }}</span>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+
+                {% if user.is_authenticated and okuma_gecmisi %}
+                <!-- OKUMA GEÇMİŞİ (SAĞ SÜTUN - KOMPAKT TASARIM) -->
+                <div class="mb-5">
+                    <div class="section-header">
+                        <span class="section-title"><i class="fa-solid fa-clock-rotate-left text-warning"></i> Devam
+                            Et</span>
+                    </div>
+                    <div class="d-flex flex-column gap-3">
+                        {% for h in okuma_gecmisi|slice:":3" %}
+                        <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:10px; padding:10px; display:flex; align-items:center; transition:0.3s;"
+                            class="hover-shadow"
+                            onmouseover="this.style.transform='translateY(-3px)'; this.style.borderColor='var(--primary)';"
+                            onmouseout="this.style.transform='none'; this.style.borderColor='var(--border)';">
+                            <a href="{% url 'manga_oku' h.series.slug h.last_chapter.number %}" class="flex-shrink-0">
+                                {% if h.series.cover_image %}
+                                <img src="{{ h.series.cover_image.url }}"
+                                    style="width:55px; height:80px; object-fit:cover; border-radius:6px; box-shadow:0 4px 8px rgba(0,0,0,0.3);">
+                                {% endif %}
+                            </a>
+                            <div class="ms-3 flex-grow-1 overflow-hidden">
+                                <a href="{% url 'manga_oku' h.series.slug h.last_chapter.number %}"
+                                    class="text-decoration-none">
+                                    <h6 class="text-truncate mb-1"
+                                        style="font-size:0.95rem; font-weight:700; color:var(--text-main);">{{ h.series.title }}</h6>
+                                </a>
+                                <a href="{% url 'manga_oku' h.series.slug h.last_chapter.number %}"
+                                    class="btn btn-sm w-100 mt-2 d-flex justify-content-between align-items-center"
+                                    style="background:rgba(138,43,226,0.15); color:var(--primary); font-weight:600; border-radius:6px; font-size:0.8rem;">
+                                    Bölüm {{ h.last_chapter.number|floatformat:"-1" }} <i
+                                        class="fa-solid fa-play ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="mb-5">
+                    <div class="section-header">
+                        <span class="section-title"><i class="fa-solid fa-arrow-trend-up text-danger"></i>
+                            Trendler</span>
+                    </div>
+                    <div class="d-flex flex-column">
+                        {% for seri in en_cok_okunanlar|slice:":10" %}
+                        <a href="{% url 'manga_detay' seri.slug %}" class="list-item text-decoration-none">
+                            <span class="list-rank">{{ forloop.counter }}</span>
+                            {% if seri.cover_image %}<img src="{{ seri.cover_image.url }}" class="list-thumb">{% else %}
+                            <div class="list-thumb bg-secondary"></div>{% endif %}
+                            <div>
+                                <h6 class="fw-bold mb-1 text-truncate"
+                                    style="max-width: 180px; color: var(--text-main);">{{ seri.title }}</h6>
+                                <small class="text-muted"><i class="fa-solid fa-eye me-1 text-primary"></i> {{ seri.views|intword }}</small>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div>
+                    <div class="section-header">
+                        <span class="section-title"><i class="fa-solid fa-crown text-warning"></i> En Çok
+                            Beğenilenler</span>
+                    </div>
+                    <div class="d-flex flex-column">
+                        {% for seri in yuksek_puanli_seriler|slice:":10" %}
+                        <a href="{% url 'manga_detay' seri.slug %}" class="list-item text-decoration-none">
+                            <span class="list-rank">{{ forloop.counter }}</span>
+                            {% if seri.cover_image %}<img src="{{ seri.cover_image.url }}" class="list-thumb">{% else %}
+                            <div class="list-thumb bg-secondary"></div>{% endif %}
+                            <div>
+                                <h6 class="fw-bold mb-1 text-truncate"
+                                    style="max-width: 180px; color: var(--text-main);">{{ seri.title }}</h6>
+                                <small class="text-warning"><i class="fa-solid fa-star me-1"></i> {{ seri.average_rating }}</small>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <div class="row g-4 align-items-center">
+
+                <div class="col-lg-4 text-center text-lg-start">
+                    <a href="{% url 'home' %}" class="footer-logo">OPEN<span>TOON</span></a>
+                    <p class="text-muted small mb-0 pe-lg-4">Türkiye'nin öncü webtoon ve manga okuma platformu. En
+                        sevdiğiniz serileri kesintisiz, tamamen ücretsiz ve yüksek kalitede okuyun.</p>
+                </div>
+
+                <div class="col-lg-4 text-center">
+                    <h5 class="text-white mb-3" style="font-size: 1.1rem;">Hızlı Bağlantılar</h5>
+                    <div class="d-flex flex-wrap justify-content-center gap-3">
+                        <a href="{% url 'home' %}" class="text-muted text-decoration-none nav-link d-inline"
+                            style="padding:0">Ana Sayfa</a>
+                        <a href="{% url 'tum_seriler' %}" class="text-muted text-decoration-none nav-link d-inline"
+                            style="padding:0">Tüm Seriler</a>
+                        <a href="{% url 'seri_siralamasi' %}" class="text-muted text-decoration-none nav-link d-inline"
+                            style="padding:0">Sıralama</a>
+                        <a href="#" class="text-muted text-decoration-none nav-link d-inline" style="padding:0"
+                            onclick="openFeedbackModal()">Geri Bildirim</a>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 text-center text-lg-end">
+                    <h5 class="text-white mb-3" style="font-size: 1.1rem;">Bizi Takip Edin</h5>
+                    <div class="footer-social justify-content-center justify-content-lg-end d-flex gap-2 p-0 m-0">
+                        <a href="https://discord.gg/opentoon" target="_blank" class="social-link"
+                            style="color: #5865F2; border-color: rgba(88,101,242,0.3);" title="Discord Sunucumuz"><i
+                                class="fa-brands fa-discord"></i></a>
+                        <a href="https://www.instagram.com/open_webtoon/" target="_blank" class="social-link"
+                            style="color: #E1306C; border-color: rgba(225,48,108,0.3);" title="Instagram Hesabımız"><i
+                                class="fa-brands fa-instagram"></i></a>
+                        <a href="https://twitter.com/opentoon" target="_blank" class="social-link"
+                            style="color: #1DA1F2; border-color: rgba(29,161,242,0.3);" title="Twitter Hesabımız"><i
+                                class="fa-brands fa-twitter"></i></a>
+                    </div>
+                </div>
+
+            </div>
+
+            <hr class="my-4 border-secondary opacity-25">
+
+            <div class="text-center text-muted small pb-4">
+                © {% now "Y" %} OpenToon. Tüm hakları saklıdır. Platformumuzdaki hiçbir içerik sunucularımızda
+                barındırılmaz.
+            </div>
+        </div>
+    </footer>
+
+    <button class="btn btn-primary rounded-circle shadow-lg d-flex align-items-center justify-content-center"
+        style="position: fixed; bottom: 30px; right: 30px; width: 50px; height: 50px; z-index: 9999;"
+        onclick="openFeedbackModal()">
+        <i class="fa-solid fa-comment-dots"></i>
+    </button>
+
+    <div class="modal fade" id="feedbackModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content"
+                style="background: var(--bg-card); border: 1px solid var(--border); color: var(--text-main);">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title fw-bold">Geri Bildirim</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="feedbackForm">
+                        <div class="mb-3">
+                            <label class="form-label">Konu</label>
+                            <select class="form-select bg-dark text-white border-secondary" id="fbType">
+                                <option value="hata" style="color: #ff9800;">⚠️ Hata Bildirimi</option>
+                                <option value="oneri" style="color: #00bcd4;">💡 Öneri</option>
+                                <option value="sikayet" style="color: #e91e63;">😡 Şikayet</option>
+                                <option value="diger" style="color: #9e9e9e;">💬 Diğer</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Mesajınız</label>
+                            <textarea class="form-control bg-dark text-white border-secondary" id="fbMessage"
+                                rows="4"></textarea>
+                        </div>
+                        <div class="text-end">
+                            <button type="button" class="btn btn-primary rounded-pill px-4"
+                                onclick="sendFeedback()">Gönder</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // TEMA YÖNETİMİ
+        (() => {
+            'use strict'
+            const getStoredTheme = () => localStorage.getItem('theme')
+            const setStoredTheme = theme => localStorage.setItem('theme', theme)
+            const getPreferredTheme = () => {
+                const storedTheme = getStoredTheme()
+                if (storedTheme) { return storedTheme }
+                return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+            }
+            const setTheme = theme => {
+                if (theme === 'auto') {
+                    document.documentElement.setAttribute('data-bs-theme', (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'))
+                } else {
+                    document.documentElement.setAttribute('data-bs-theme', theme)
+                }
+            }
+            setTheme(getPreferredTheme())
+
+            window.addEventListener('DOMContentLoaded', () => {
+                const desktopToggle = document.getElementById('desktopThemeToggle');
+                const mobileToggle = document.getElementById('mobileThemeToggle');
+
+                const toggleTheme = () => {
+                    const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+                    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                    setStoredTheme(newTheme);
+                    setTheme(newTheme);
+                };
+
+                if (desktopToggle) desktopToggle.addEventListener('click', toggleTheme);
+                if (mobileToggle) mobileToggle.addEventListener('click', toggleTheme);
+            })
+        })()
+
+        // MOBİL MENÜ ÇAKIŞMA ÖNLEYİCİ
+        const mobileSearchDropdown = document.getElementById('mobileSearchDropdown');
+        const navContent = document.getElementById('navContent');
+        const mobileThemeDropdown = document.getElementById('mobileThemeDropdown');
+
+        const closeMobileTheme = () => {
+            const themeBtn = document.getElementById('mobileThemeBtn');
+            if (themeBtn && themeBtn.classList.contains('show')) { themeBtn.click(); }
+        };
+
+        if (mobileSearchDropdown && navContent) {
+            mobileSearchDropdown.addEventListener('show.bs.collapse', () => {
+                const navBs = bootstrap.Collapse.getInstance(navContent);
+                if (navBs) navBs.hide();
+                closeMobileTheme();
+            });
+            mobileSearchDropdown.addEventListener('shown.bs.collapse', () => {
+                document.getElementById('mobileSearchInput').focus();
+            });
+            navContent.addEventListener('show.bs.collapse', () => {
+                const searchBs = bootstrap.Collapse.getInstance(mobileSearchDropdown);
+                if (searchBs) searchBs.hide();
+                closeMobileTheme();
+            });
+            if (mobileThemeDropdown) {
+                mobileThemeDropdown.addEventListener('show.bs.dropdown', () => {
+                    const navBs = bootstrap.Collapse.getInstance(navContent);
+                    if (navBs) navBs.hide();
+                    const searchBs = bootstrap.Collapse.getInstance(mobileSearchDropdown);
+                    if (searchBs) searchBs.hide();
+                });
+            }
+        }
+
+        // LIVE SEARCH
+        const setupSearch = (inputId, resultId) => {
+            const input = document.getElementById(inputId);
+            const results = document.getElementById(resultId);
+            if (!input || !results) return;
+
+            input.addEventListener('input', function () {
+                const query = this.value.trim();
+                if (query.length > 1) {
+                    fetch(`/api/search/?q=${query}`).then(res => res.json()).then(data => {
+                        results.innerHTML = '';
+                        if (data.results.length > 0) {
+                            results.style.display = 'block';
+                            data.results.forEach(item => {
+                                const a = document.createElement('a');
+                                a.href = `/manga/${item.slug}/`;
+                                a.className = 'live-item';
+                                const img = item.cover ? `<img src="${item.cover}">` : '';
+                                a.innerHTML = `${img}<span class="fw-bold">${item.title}</span>`;
+                                results.appendChild(a);
+                            });
+                        } else { results.style.display = 'none'; }
+                    });
+                } else { results.style.display = 'none'; }
+            });
+            document.addEventListener('click', function (e) {
+                if (!input.contains(e.target) && !results.contains(e.target)) { results.style.display = 'none'; }
+            });
+        };
+
+        setupSearch('desktopSearchInput', 'desktopSearchResults');
+        setupSearch('mobileSearchInput', 'mobileSearchResults');
+
+        // INSTAGRAM TARZI HIZLI KAYDET BUTONU 
+        function toggleCardLike(e, slug, btn) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const authStatus = document.getElementById('authStatus').value === 'true';
+            if (!authStatus) {
+                if (confirm("Listeye eklemek için giriş yapmalısınız. Giriş sayfasına gidilsin mi?")) {
+                    window.location.href = document.getElementById('loginUrl').value;
+                }
+                return;
+            }
+
+            const icon = btn.querySelector('i');
+            const csrfToken = document.getElementById('csrfToken').value;
+
+            fetch(`/like/${slug}/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'application/json' }
+            })
+                .then(r => r.json()).then(d => {
+                    if (d.liked) {
+                        icon.classList.replace('fa-regular', 'fa-solid');
+                        icon.classList.add('liked');
+                    } else {
+                        icon.classList.replace('fa-solid', 'fa-regular');
+                        icon.classList.remove('liked');
+                    }
+                });
+        }
+
+        // FEEDBACK JS
+        function openFeedbackModal() {
+            const authStatus = document.getElementById('authStatus').value === 'true';
+            if (!authStatus) {
+                if (confirm("Giriş yapmanız gerekiyor.")) window.location.href = document.getElementById('loginUrl').value;
+                return;
+            }
+            new bootstrap.Modal(document.getElementById('feedbackModal')).show();
+        }
+
+        function sendFeedback() {
+            const type = document.getElementById('fbType').value;
+            const message = document.getElementById('fbMessage').value;
+            const currentUrl = window.location.href;
+            const csrfToken = document.getElementById('csrfToken').value;
+            if (!message) { alert("Lütfen bir mesaj yazın."); return; }
+            fetch('/api/feedback/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                body: JSON.stringify({ type: type, message: message, url: currentUrl })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') { alert(data.message); location.reload(); } else { alert("Hata: " + data.message); }
+                });
+        }
+    </script>
+
+    <script>
+        // BİLDİRİM SİSTEMİ JS
+        function loadNotifications() {
+            const authStatus = document.getElementById('authStatus');
+            if (!authStatus || authStatus.value !== 'true') return;
+            fetch('/api/notifications/').then(r => r.json()).then(d => {
+                if (d.status === 'success') {
+                    const badge = document.getElementById('notifBadge');
+                    const list = document.getElementById('notifList');
+                    if (badge && list) {
+                        if (d.unread_count > 0) {
+                            badge.innerText = d.unread_count;
+                            badge.classList.remove('d-none');
+                            document.querySelectorAll('.mobile-notif-badge').forEach(b => {
+                                b.innerText = d.unread_count;
+                                b.classList.remove('d-none');
+                            });
+                        }
+                        let html = '<li><h6 class="dropdown-header">Bildirimler</h6></li>';
+                        if (d.notifications.length === 0) {
+                            html += '<li><span class="dropdown-item text-muted small">Bildirim yok.</span></li>';
+                        } else {
+                            d.notifications.forEach(n => {
+                                html += `<li><a class="dropdown-item text-wrap small ${n.is_read ? 'text-muted' : 'fw-bold'}" href="${n.link}" style="border-bottom: 1px solid var(--border-color, #eee); padding: 10px;"><i class="fa-solid fa-circle-info me-2 text-primary"></i>${n.message}<br><small class="text-secondary">${n.created_at}</small></a></li>`;
+                            });
+                        }
+                        list.innerHTML = html;
+
+                        const mobileList = document.getElementById('notifListMobile');
+                        if (mobileList) { mobileList.innerHTML = html; }
+                    }
+                }
+            }).catch(e => console.log(e));
+        }
+
+        function markNotificationsRead() {
+            const badge = document.getElementById('notifBadge');
+            if (badge && !badge.classList.contains('d-none')) {
+                const csrfToken = document.getElementById('csrfToken');
+                if (csrfToken) {
+                    fetch('/api/notifications/mark-read/', { method: 'POST', headers: { 'X-CSRFToken': csrfToken.value } });
+                    badge.classList.add('d-none');
+                    badge.innerText = '0';
+                    document.querySelectorAll('.mobile-notif-badge').forEach(b => {
+                        b.innerText = '0';
+                        b.classList.add('d-none');
+                    });
+                }
+            }
+        }
+        document.addEventListener('DOMContentLoaded', loadNotifications);
+    </script>
+
+</body>
+
+</html>

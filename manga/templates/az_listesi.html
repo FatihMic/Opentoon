@@ -1,0 +1,261 @@
+{% load static %}
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>A-Z Seri Listesi - OpenToon</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <script>
+        (function() {
+            const storedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-bs-theme', storedTheme);
+        })();
+    </script>
+
+    <style>
+        :root { 
+            --primary: #7248f9; --bg-body: #0f0f12; --bg-card: #18181c; 
+            --text-main: #ffffff; --text-muted: #a0a0a0; --border-color: #26262e;
+            --nav-bg: rgba(15, 15, 18, 0.95);
+        }
+        [data-bs-theme="light"] { 
+            --bg-body: #f4f7f6; --bg-card: #ffffff; --text-main: #2d3436; 
+            --text-muted: #636e72; --border-color: #e0e0e0; --nav-bg: rgba(255, 255, 255, 0.95);
+        }
+        
+        body { background-color: var(--bg-body); color: var(--text-main); font-family: 'Inter', sans-serif; padding-top: 80px; padding-bottom: 50px; transition: 0.3s; scroll-behavior: smooth; }
+        h1, h2, h3, h4, h5, h6, .navbar-brand { font-family: 'Outfit', sans-serif; }
+        a { text-decoration: none; }
+        
+        .navbar { background-color: var(--nav-bg); border-bottom: 1px solid var(--border-color); backdrop-filter: blur(10px); }
+        .navbar-brand { color: var(--text-main) !important; font-weight: 700; }
+        .nav-link { color: var(--text-muted) !important; }
+
+        .library-header {
+            padding: 40px 0 30px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--border-color);
+            background: linear-gradient(0deg, var(--bg-body) 0%, rgba(0, 188, 212, 0.05) 100%);
+        }
+
+        /* ALFABE BAR'I */
+        .alphabet-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            justify-content: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .alpha-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text-main);
+            font-weight: 700;
+            text-decoration: none;
+            transition: 0.2s;
+            border: 1px solid transparent;
+        }
+        
+        .alpha-btn:hover {
+            background: rgba(114, 72, 249, 0.1);
+            color: var(--primary);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .alpha-btn.disabled {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        /* HARF GRUPLARI */
+        .letter-group {
+            margin-bottom: 40px;
+        }
+        
+        .letter-header {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .letter-header span {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            background: var(--bg-card);
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .series-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+        }
+
+        .series-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            transition: 0.2s;
+        }
+
+        .series-item:hover {
+            border-color: var(--primary);
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .series-item img {
+            width: 40px;
+            height: 60px;
+            border-radius: 4px;
+            object-fit: cover;
+            margin-right: 15px;
+        }
+
+        .series-title {
+            color: var(--text-main);
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.3;
+        }
+
+        .top-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 15px rgba(114, 72, 249, 0.5);
+            opacity: 0;
+            visibility: hidden;
+            transition: 0.3s;
+            z-index: 1000;
+        }
+        
+        .top-btn.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        .top-btn:hover { color: white; transform: translateY(-5px); }
+
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg fixed-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="{% url 'home' %}">
+                <i class="fa-solid fa-arrow-left me-2 text-primary"></i> Ana Sayfa
+            </a>
+            <span class="text-muted ms-auto small fw-bold">Toplam: {{ toplam_seri }} Seri</span>
+        </div>
+    </nav>
+
+    <div class="library-header text-center">
+        <div class="container">
+            <h1 class="display-5 fw-bolder mb-2" style="letter-spacing: -1px;"><i class="fa-solid fa-font text-info me-3"></i>A-Z Listesi</h1>
+            <p class="text-muted mb-0">Aradığın seriyi alfabetik olarak kolayca bulabilirsin.</p>
+        </div>
+    </div>
+
+    <div class="container">
+        
+        <!-- HARF BAR'I -->
+        <div class="alphabet-bar">
+            {% for harf, seriler in harf_gruplari.items %}
+                <a href="#letter-{{ harf }}" class="alpha-btn {% if not seriler %}disabled{% endif %}">{{ harf }}</a>
+            {% endfor %}
+        </div>
+
+        <!-- İÇERİK LİSTESİ -->
+        <div>
+            {% for harf, seriler in harf_gruplari.items %}
+                {% if seriler %}
+                    <div class="letter-group" id="letter-{{ harf }}" style="scroll-margin-top: 100px;">
+                        <h2 class="letter-header">
+                            {{ harf }}
+                            <span>{{ seriler|length }} Seri</span>
+                        </h2>
+                        
+                        <div class="series-list">
+                            {% for seri in seriler %}
+                                <a href="{% url 'manga_detay' seri.slug %}" class="series-item">
+                                    {% if seri.cover_image %}
+                                        <img src="{{ seri.cover_image.url }}" alt="{{ seri.title }}">
+                                    {% else %}
+                                        <div class="bg-secondary d-flex align-items-center justify-content-center" style="width: 40px; height: 60px; border-radius: 4px; margin-right: 15px;">
+                                            <i class="fa-solid fa-image text-white opacity-50 small"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div class="series-title">{{ seri.title }}</div>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+        
+    </div>
+
+    <a href="#" class="top-btn" id="scrollTopBtn"><i class="fa-solid fa-arrow-up"></i></a>
+
+    <script>
+        // Scroll To Top Butonu
+        const topBtn = document.getElementById('scrollTopBtn');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 300) {
+                topBtn.classList.add('visible');
+            } else {
+                topBtn.classList.remove('visible');
+            }
+        });
+        topBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    </script>
+</body>
+</html>

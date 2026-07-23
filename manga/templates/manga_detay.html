@@ -1,0 +1,654 @@
+{% load static %}
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ seri.title }} - OpenToon</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        (function() {
+            const storedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-bs-theme', storedTheme);
+        })();
+    </script>
+
+    <style>
+        /* TEMA DEĞİŞKENLERİ */
+        :root {
+            --bg-body: #0a0a0c; --text-main: #fff; --card-bg: #15151a;
+            --accent: #7248f9; --border-color: rgba(255, 255, 255, 0.1);
+        }
+        [data-bs-theme="light"] {
+            --bg-body: #f4f6f8; --text-main: #212529; --card-bg: #ffffff;
+            --border-color: rgba(0, 0, 0, 0.1);
+        }
+        body { background-color: var(--bg-body); color: var(--text-main); font-family: 'Segoe UI', sans-serif; overflow-x: hidden; }
+
+        /* ARKA PLAN BLUR */
+        .backdrop {
+            position: absolute; top: 0; left: 0; width: 100%; height: 550px;
+            background-size: cover; background-position: center top;
+            filter: blur(15px) brightness(0.3); z-index: -1;
+            mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
+        }
+
+        /* KAPAK RESMİ */
+        .manga-cover {
+            width: 100%; max-width: 300px; aspect-ratio: 2/3; object-fit: cover;
+            border-radius: 12px; box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+            transition: transform 0.3s;
+        }
+        .manga-cover:hover { transform: translateY(-5px); }
+
+        /* BİLGİ KARTLARI */
+        .info-card {
+            background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;
+            text-align: center; height: 100%; display: flex; flex-direction: column; justify-content: center;
+            transition: transform 0.2s, background 0.2s;
+        }
+        .info-card:hover { background: rgba(255, 255, 255, 0.07); transform: translateY(-3px); }
+        [data-bs-theme="light"] .info-card { background: rgba(0,0,0,0.03); }
+
+        /* LİSTEME EKLE BUTONU */
+        .like-card { cursor: pointer; border-color: rgba(114, 72, 249, 0.3); } 
+        .like-card:hover { border-color: var(--accent); }
+        .like-active { background-color: var(--accent) !important; color: #fff !important; box-shadow: 0 10px 20px rgba(255,174,0, 0.3); border-color: var(--accent); }
+        .like-active i, .like-active h2, .like-active small { color: #fff !important; }
+        
+        /* SPOILER CSS */
+        .spoiler-container { position: relative; cursor: pointer; border-radius: 8px; overflow: hidden; display: block; padding: 5px; }
+        .spoiler-content { filter: blur(8px); transition: filter 0.3s ease; user-select: none; }
+        .spoiler-overlay {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.65); color: #ff5252;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            font-size: 0.8rem; font-weight: 800; text-align: center; z-index: 2; transition: opacity 0.3s;
+        }
+        .spoiler-container.revealed .spoiler-content { filter: blur(0); user-select: text; }
+        .spoiler-container.revealed .spoiler-overlay { opacity: 0; pointer-events: none; }
+
+        /* YILDIZLAR */
+        .star-rating { font-size: 1.2rem; }
+        .star-rating i { color: #444; cursor: pointer; transition: color 0.2s, transform 0.1s; margin: 0 2px; }
+        .star-rating i.active { color: #ffc107; }
+        .star-rating i:hover { color: #ffdb73; transform: scale(1.2); }
+
+        /* BÖLÜM LİSTESİ */
+        .chapter-list-container {
+            background: var(--card-bg); border-radius: 16px; border: 1px solid var(--border-color);
+            padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .chapter-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 20px; margin-bottom: 10px; border-radius: 10px;
+            background: rgba(128,128,128,0.05); color: var(--text-main); text-decoration: none;
+            transition: 0.2s; border-left: 4px solid transparent; cursor: pointer;
+        }
+        .chapter-item:hover {
+            background: rgba(114, 72, 249, 0.1); border-left-color: var(--accent);
+            color: var(--text-main); padding-left: 25px;
+        }
+        .chapter-number { font-weight: 700; font-size: 1.05rem; }
+        .chapter-date { font-size: 0.85rem; opacity: 0.6; }
+
+        /* YORUMLAR */
+        .comment-section {
+            background: var(--card-bg); border-radius: 16px; border: 1px solid var(--border-color);
+            padding: 25px; margin-top: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .form-control {
+            background-color: rgba(255,255,255,0.05) !important; border: 1px solid var(--border-color) !important;
+            color: var(--text-main) !important;
+        }
+        .form-control:focus { box-shadow: 0 0 0 3px rgba(114, 72, 249, 0.25); border-color: var(--accent) !important; }
+        
+        .comment-bubble {
+            background: rgba(128,128,128,0.03); border: 1px solid var(--border-color);
+            border-radius: 0 12px 12px 12px; padding: 10px 15px; margin-top: 3px;
+            display: inline-block; max-width: 100%; position: relative;
+        }
+        .comment-heart { cursor: pointer; transition: transform 0.2s; color: var(--text-muted); }
+        .comment-heart:hover { transform: scale(1.2); }
+        .comment-heart.active { color: #ff4757; }
+        .reply-line { border-left: 2px solid var(--border-color); margin-left: 22px; padding-left: 20px; }
+        .reply-btn { color: var(--text-muted); font-size: 0.8rem; font-weight: 600; text-decoration: none; cursor: pointer; transition: 0.2s; }
+        .reply-btn:hover { color: var(--accent); }
+        .delete-btn { color: var(--text-muted); opacity: 0.5; transition: 0.2s; cursor: pointer; font-size: 0.9rem; }
+        .delete-btn:hover { color: #ff4757; opacity: 1; }
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.0.0/css/flag-icons.min.css"/>
+</head>
+<body>
+
+    <input type="hidden" id="authStatus" value="{{ user.is_authenticated|yesno:'true,false' }}">
+    <input type="hidden" id="loginUrl" value="{% url 'login' %}">
+    <input type="hidden" id="rateUrl" value="{% url 'puan_ver' seri.slug %}">
+    <input type="hidden" id="likeUrl" value="{% url 'seri_begen' seri.slug %}">
+    <input type="hidden" id="csrfToken" value="{{ csrf_token }}">
+
+    <div class="container pt-4">
+        <a href="{% url 'home' %}" class="btn btn-outline-secondary rounded-pill px-4 bg-dark text-white border-0 shadow-sm hover-scale">
+            <i class="fa-solid fa-arrow-left me-2"></i> Ana Sayfa
+        </a>
+    </div>
+
+    {% if seri.cover_image %}
+        <div class="backdrop" style="background-image: url('{{ seri.cover_image.url }}');"></div>
+    {% else %}
+        <div class="backdrop" style="background: linear-gradient(45deg, #1a1a2e, #16213e);"></div>
+    {% endif %}
+
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-lg-3 col-md-4 text-center">
+                {% if seri.cover_image %}
+                    <img src="{{ seri.cover_image.url }}" class="manga-cover" alt="{{ seri.title }}">
+                {% else %}
+                    <div class="manga-cover d-flex align-items-center justify-content-center bg-secondary text-white">
+                        <div><i class="fa-solid fa-image fa-3x mb-2"></i><br>Resim Yok</div>
+                    </div>
+                {% endif %}
+                
+                <div class="d-grid gap-2 mt-4">
+                    {% if bolumler %}
+                        
+                        {% if seri_bitti_mi %}
+                            <button class="btn btn-success rounded-pill py-3 fw-bold shadow-lg" disabled style="opacity: 1;">
+                                <i class="fa-solid fa-check-circle me-2"></i>Seriyi Bitirdiniz
+                            </button>
+                            
+                            {% if ilk_bolum %}
+                                <button type="button" 
+                                        class="btn btn-sm btn-outline-light border-0 opacity-75 mt-1"
+                                        data-url="{% url 'manga_oku' seri.slug ilk_bolum.number|stringformat:'g' %}"
+                                        onclick="safeRead(this)">
+                                    <i class="fa-solid fa-rotate-left me-1"></i> Tekrar Oku
+                                </button>
+                            {% endif %}
+
+                        {% elif kaldigi_bolum %}
+                            <button type="button" 
+                                    class="btn btn-warning rounded-pill py-3 fw-bold shadow-lg text-dark"
+                                    data-url="{% url 'manga_oku' seri.slug kaldigi_bolum.number|stringformat:'g' %}?page={{ kaldigi_sayfa }}"
+                                    onclick="safeRead(this)">
+                                <i class="fa-solid fa-clock-rotate-left me-2"></i> Devam Et<br>
+                                <span class="small opacity-75">
+                                    Bölüm {{ kaldigi_bolum.number|floatformat }} 
+                                    {% if kaldigi_sayfa > 1 %} &bull; Sayfa {{ kaldigi_sayfa }} {% endif %}
+                                </span>
+                            </button>
+                            
+                            {% if ilk_bolum %}
+                                <button type="button" 
+                                        class="btn btn-sm btn-outline-light border-0 opacity-50 mt-1"
+                                        data-url="{% url 'manga_oku' seri.slug ilk_bolum.number|stringformat:'g' %}"
+                                        onclick="safeRead(this)">
+                                    Baştan Başla
+                                </button>
+                            {% endif %}
+
+                        {% else %}
+                            {% if ilk_bolum %}
+                                <button type="button" 
+                                        class="btn btn-primary rounded-pill py-3 fw-bold shadow-lg"
+                                        data-url="{% url 'manga_oku' seri.slug ilk_bolum.number|stringformat:'g' %}"
+                                        onclick="safeRead(this)">
+                                    <i class="fa-solid fa-book-open me-2"></i> Okumaya Başla
+                                </button>
+                            {% endif %}
+                        {% endif %}
+
+                    {% else %}
+                        <button class="btn btn-secondary rounded-pill py-3" disabled>Henüz Bölüm Yok</button>
+                    {% endif %}
+                </div>
+                </div>
+
+            <div class="col-lg-9 col-md-8 mt-4 mt-md-0 ps-md-5">
+                <h1 class="display-3 fw-bold mb-2">{{ seri.title }}</h1>
+                
+                <div class="d-flex flex-wrap align-items-center gap-3 mb-4 text-muted">
+                    <span class="d-flex align-items-center fw-bold text-white"><i class="fa-solid fa-eye me-2 text-primary"></i> {{ seri.views }} Görüntülenme</span>
+                    
+                    {% if seri.type == 'webtoon' %}
+                        <span class="badge bg-danger px-3 py-2 rounded-pill">WEBTOON</span>
+                    {% elif seri.type == 'manga' %}
+                        <span class="badge bg-primary px-3 py-2 rounded-pill">MANGA</span>
+                    {% elif seri.type == 'manhwa' %}
+                        <span class="badge bg-success px-3 py-2 rounded-pill">MANHWA</span>
+                    {% elif seri.type == 'manhua' %}
+                        <span class="badge bg-warning text-dark px-3 py-2 rounded-pill">MANHUA</span>
+                    {% endif %}
+
+                    <span class="badge bg-secondary px-3 py-2 rounded-pill"><i class="fa-solid fa-pen-nib me-1"></i> {{ seri.author|default:"-" }}</span>
+                    
+                    {% if seri.status == 'tamamlandi' %}
+                        <span class="badge bg-danger px-3 py-2 rounded-pill">FİNAL</span>
+                    {% elif seri.status == 'ara' %}
+                        <span class="badge bg-warning text-dark px-3 py-2 rounded-pill">Ara Verildi</span>
+                    {% else %}
+                        <span class="badge bg-success px-3 py-2 rounded-pill">Devam Ediyor</span>
+                    {% endif %}
+                </div>
+
+                <div class="row g-3 mb-5">
+                    <div class="col-6 col-md-4">
+                        <div class="info-card">
+                            <h2 class="fw-bold m-0 text-warning" id="avgRating">{{ seri.average_rating }}</h2>
+                            <div class="star-rating my-1" id="starContainer" data-user-rating="{{ user_rating }}">
+                                <i class="fa-solid fa-star" data-value="1" onclick="rateSeries(1)"></i>
+                                <i class="fa-solid fa-star" data-value="2" onclick="rateSeries(2)"></i>
+                                <i class="fa-solid fa-star" data-value="3" onclick="rateSeries(3)"></i>
+                                <i class="fa-solid fa-star" data-value="4" onclick="rateSeries(4)"></i>
+                                <i class="fa-solid fa-star" data-value="5" onclick="rateSeries(5)"></i>
+                            </div>
+                            <small class="opacity-75">Puan Ver</small>
+                        </div>
+                    </div>
+
+                    <div class="col-6 col-md-4">
+                        <div class="info-card">
+                            <h2 class="fw-bold m-0 text-success">{{ bolumler.count }}</h2>
+                            <div class="my-1"><i class="fa-solid fa-layer-group text-success"></i></div>
+                            <small class="opacity-75">Bölüm</small>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <div class="info-card like-card {% if user in seri.likes.all %}like-active{% endif %}" id="likeBtn" onclick="toggleLike()">
+                            <h2 class="fw-bold m-0" style="color: var(--accent);">
+                                <span id="likeCount">{{ seri.total_likes }}</span>
+                            </h2>
+                            <div class="my-1">
+                                <i class="{% if user in seri.likes.all %}fa-solid{% else %}fa-regular{% endif %} fa-bookmark fa-lg" 
+                                   id="heartIcon" style="color: var(--accent);"></i>
+                            </div>
+                            <small class="opacity-75" id="likeText">
+                                {% if user in seri.likes.all %}Listemde{% else %}Listeme Ekle{% endif %}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-5">
+                    <h5 class="fw-bold border-start border-4 border-primary ps-3 mb-3 text-uppercase">Özet</h5>
+                    <p class="lead fs-6 opacity-75" style="line-height: 1.8; text-align: justify;">
+                        {{ seri.description|linebreaksbr|default:"Açıklama yok." }}
+                    </p>
+                </div>
+
+                <div class="chapter-list-container">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="fw-bold m-0"><i class="fa-solid fa-list-ul me-2 text-primary"></i> Bölümler</h4>
+                        <span class="badge bg-dark border border-secondary">{{ bolumler.count }}</span>
+                    </div>
+                    <div style="max-height: 600px; overflow-y: auto; padding-right: 10px;">
+                        {% for bolum in bolumler %}
+                        <div class="chapter-item d-flex justify-content-between align-items-center" style="padding: 10px 15px;">
+                            <div class="d-flex align-items-center flex-grow-1" 
+                                 data-url="{% url 'manga_oku' seri.slug bolum.number|stringformat:'g' %}"
+                                 onclick="safeRead(this)" style="cursor: pointer;">
+                                <div class="bg-primary bg-opacity-25 text-primary rounded-circle p-2 me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fa-solid fa-book-open"></i>
+                                </div>
+                                <div>
+                                    <span class="chapter-number d-block">Bölüm {{ bolum.number|floatformat }}</span>
+                                    {% if bolum.title %}<span class="small opacity-50">{{ bolum.title }}</span>{% endif %}
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="chapter-date d-none d-md-inline">{{ bolum.uploaded_at|date:"d M Y" }}</span>
+                                <a href="{% url 'manga_bolum_indir' bolum.id %}" class="btn btn-sm btn-outline-primary rounded-pill py-1 px-3" title="İndir" onclick="event.stopPropagation();">
+                                    <i class="fa-solid fa-download"></i> İndir
+                                </a>
+                            </div>
+                        </div>
+                        {% empty %}
+                            <div class="text-center py-5 opacity-50"><p>Henüz bölüm yok.</p></div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="comment-section">
+                    <h4 class="fw-bold mb-4 border-start border-4 border-warning ps-3" style="border-color: #ffc107 !important;">Yorumlar ({{ yorumlar.count }})</h4>
+                    {% if user.is_authenticated %}
+                        <div class="mb-5">
+                            <form method="post">
+                                {% csrf_token %}
+                                <div class="d-flex align-items-start gap-3">
+                                    {% if user.profile.avatar %}
+                                        <img src="{{ user.profile.avatar_url }}" class="rounded-circle shadow-sm" style="width: 45px; height: 45px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center text-white fw-bold shadow-sm" style="width: 45px; height: 45px;">{{ user.username|first|upper }}</div>
+                                    {% endif %}
+                                    <div class="flex-grow-1">
+                                        {{ comment_form.content }}
+                                        <div class="d-flex justify-content-between align-items-center mt-2">
+                                            <div class="form-check text-start">
+                                                <input class="form-check-input" type="checkbox" name="is_spoiler" id="id_is_spoiler">
+                                                <label class="form-check-label text-warning small fw-bold" for="id_is_spoiler">
+                                                    <i class="fa-solid fa-triangle-exclamation"></i> Spoiler (Sürprizbozan)
+                                                </label>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" style="background: var(--accent); border:none;">Gönder</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-secondary text-center rounded-4 border-0 mb-4" role="alert">
+                            <i class="fa-solid fa-lock me-2"></i>Yorum yapmak için <a href="{% url 'login' %}" class="fw-bold text-decoration-none" style="color: var(--accent);">giriş yapmalısın</a>.
+                        </div>
+                    {% endif %}
+
+                    <div class="comment-list">
+                        {% for yorum in yorumlar %}
+                        <div class="d-flex gap-3 mb-4 comment-container" id="comment-{{ yorum.id }}">
+                            <div class="flex-shrink-0">
+                                {% if yorum.user.profile.avatar %}
+                                    <img src="{{ yorum.user.profile.avatar_url }}" class="rounded-circle" style="width: 45px; height: 45px; object-fit: cover; border: 2px solid var(--border-color);">
+                                {% else %}
+                                    <div class="rounded-circle bg-dark d-flex align-items-center justify-content-center text-white fw-bold" style="width: 45px; height: 45px; border: 2px solid var(--border-color);">{{ yorum.user.username|first|upper }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-baseline mb-1">
+                                    <h6 class="fw-bold mb-0 me-2" style="font-size: 0.95rem;">{{ yorum.user.username }}</h6>
+                                    <small class="opacity-50" style="font-size: 0.75rem;">{{ yorum.created_at|date:"d F Y, H:i" }}</small>
+                                </div>
+                                <div class="comment-bubble">
+                                    {% if yorum.is_spoiler %}
+                                    <div class="spoiler-container" onclick="this.classList.toggle('revealed')">
+                                        <div class="spoiler-overlay"><i class="fa-solid fa-eye-slash mb-1 fs-5"></i><span>SPOILER İÇERİR</span><small class="fw-normal mt-1 text-white">Görmek için tıkla</small></div>
+                                        <p class="mb-0 opacity-90 spoiler-content">{{ yorum.content }}</p>
+                                    </div>
+                                    {% else %}
+                                    <p class="mb-0 opacity-90">{{ yorum.content }}</p>
+                                    {% endif %}
+                                </div>
+                                <div class="mt-1 ms-1 d-flex align-items-center gap-3">
+                                    <span class="reply-btn" onclick="toggleReplyForm('reply-form-{{ yorum.id }}')">Yanıtla</span>
+                                    {% if user == yorum.user or user.is_superuser %}
+                                        <i class="fa-solid fa-trash-can delete-btn" data-comment-id="{{ yorum.id }}" onclick="deleteComment(this)" title="Sil"></i>
+                                    {% endif %}
+                                </div>
+
+                                <div id="reply-form-{{ yorum.id }}" class="mt-3" style="display: none;">
+                                    {% if user.is_authenticated %}
+                                        <form method="post">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="parent_id" value="{{ yorum.id }}">
+                                            <textarea name="content" class="form-control mb-2" rows="2" placeholder="@{{ yorum.user.username }} kullanıcısına cevap ver..."></textarea>
+                                            <div class="text-end"><button type="submit" class="btn btn-sm btn-primary rounded-pill px-3 fw-bold">Yanıtla</button></div>
+                                        </form>
+                                    {% endif %}
+                                </div>
+
+                                {% if yorum.replies.all %}
+                                    <div class="reply-line mt-3">
+                                        {% for cevap in yorum.replies.all %}
+                                            <div class="d-flex gap-3 mb-3 comment-container" id="comment-{{ cevap.id }}">
+                                                <div class="flex-shrink-0">
+                                                    {% if cevap.user.profile.avatar %}
+                                                        <img src="{{ cevap.user.profile.avatar_url }}" class="rounded-circle" style="width: 35px; height: 35px; object-fit: cover; border: 1px solid var(--border-color);">
+                                                    {% else %}
+                                                        <div class="rounded-circle bg-dark d-flex align-items-center justify-content-center text-white fw-bold small" style="width: 35px; height: 35px; border: 1px solid var(--border-color);">{{ cevap.user.username|first|upper }}</div>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="flex-grow-1">
+                                                    <div class="d-flex align-items-baseline mb-1">
+                                                        <h6 class="fw-bold mb-0 me-2" style="font-size: 0.9rem;">{{ cevap.user.username }}</h6>
+                                                        <small class="opacity-50" style="font-size: 0.75rem;">{{ yorum.created_at|date:"d F Y, H:i" }}</small>
+                                                    </div>
+                                                    <div class="comment-bubble py-2 px-3"><p class="mb-0 opacity-90 small">{{ cevap.content }}</p></div>
+                                                    <div class="d-flex align-items-center mt-1 ms-1 gap-3">
+                                                        <span class="reply-btn" onclick="prepareReply('{{ yorum.id }}', '{{ cevap.user.username }}')" style="font-size: 0.75rem;">Yanıtla</span>
+                                                        <div class="d-flex align-items-center">
+                                                            <i class="{% if user in cevap.likes.all %}fa-solid active{% else %}fa-regular{% endif %} fa-heart comment-heart me-1" data-comment-id="{{ cevap.id }}" onclick="toggleCommentLike(this)" style="font-size: 0.8rem;"></i>
+                                                            <span class="small opacity-50" style="font-size: 0.7rem;">{{ cevap.num_likes }}</span>
+                                                        </div>
+                                                        {% if user == cevap.user or user.is_superuser %}
+                                                            <i class="fa-solid fa-trash-can delete-btn" data-comment-id="{{ cevap.id }}" onclick="deleteComment(this)" title="Sil" style="font-size: 0.8rem;"></i>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="flex-shrink-0 text-center ms-2 pt-2">
+                                <i class="{% if user in yorum.likes.all %}fa-solid active{% else %}fa-regular{% endif %} fa-heart comment-heart" data-comment-id="{{ yorum.id }}" onclick="toggleCommentLike(this)" style="font-size: 1rem;"></i>
+                                <span class="d-block small opacity-50 mt-1 comment-like-count" style="font-size: 0.75rem;">{{ yorum.num_likes }}</span>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p class="text-muted text-center py-4">Henüz yorum yapılmamış.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="btn btn-primary rounded-circle shadow-lg d-flex align-items-center justify-content-center" 
+            style="position: fixed; bottom: 30px; right: 30px; width: 50px; height: 50px; z-index: 9999;"
+            onclick="openFeedbackModal()">
+        <i class="fa-solid fa-comment-dots"></i>
+    </button>
+
+    <div class="modal fade" id="feedbackModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-main);">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title fw-bold">Geri Bildirim</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="feedbackForm">
+                        <div class="mb-3">
+                            <label class="form-label" style="color: var(--text-main);">Konu</label>
+                            <select class="form-select bg-dark text-white border-secondary" id="fbType">
+                                <option value="hata" style="color: #ff9800;">⚠️ Hata Bildirimi</option>
+                                <option value="oneri" style="color: #00bcd4;">💡 Öneri</option>
+                                <option value="sikayet" style="color: #e91e63;">😡 Şikayet</option>
+                                <option value="diger" style="color: #9e9e9e;">💬 Diğer</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" style="color: var(--text-main);">Mesajınız</label>
+                            <textarea class="form-control bg-dark text-white border-secondary" id="fbMessage" rows="4"></textarea>
+                        </div>
+                        <div class="text-end">
+                            <button type="button" class="btn btn-primary rounded-pill px-4" onclick="sendFeedback()">Gönder</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center py-5 mt-5 opacity-50 small border-top border-secondary">&copy; 2026 OpenToon | Tüm Hakları Saklıdır.</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // DOM ELEMENTLERİ VE DEĞİŞKENLER
+        const authStatus = document.getElementById('authStatus').value === 'true';
+        const loginUrl = document.getElementById('loginUrl').value;
+        const rateUrl = document.getElementById('rateUrl').value;
+        const likeUrl = document.getElementById('likeUrl').value;
+        const csrfToken = document.getElementById('csrfToken').value;
+
+       function safeRead(element) {
+           const url = element.getAttribute('data-url');
+          window.location.href = url; 
+        }
+
+        // FEEDBACK GÜVENLİK KONTROLÜ
+        function openFeedbackModal() {
+            if (!authStatus) {
+                if(confirm("Hata bildirmek için giriş yapmalısınız. Giriş sayfasına gidilsin mi?")) {
+                    window.location.href = loginUrl;
+                }
+                return;
+            }
+            var myModal = new bootstrap.Modal(document.getElementById('feedbackModal'));
+            myModal.show();
+        }
+
+        function sendFeedback() {
+            const type = document.getElementById('fbType').value;
+            const message = document.getElementById('fbMessage').value;
+            const currentUrl = window.location.href; 
+
+            if (!message) { alert("Lütfen bir mesaj yazın."); return; }
+
+            fetch('/api/feedback/', { 
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ type: type, message: message, url: currentUrl })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(data.message);
+                    document.getElementById('fbMessage').value = ''; 
+                    const modalEl = document.getElementById('feedbackModal');
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) modal.hide();
+                } else {
+                    alert("Hata: " + data.message);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        // PUANLAMA SİSTEMİ
+        const stars = document.querySelectorAll('.star-rating i');
+        const userRating = parseInt(document.getElementById('starContainer').getAttribute('data-user-rating')) || 0;
+        updateStars(userRating);
+
+        function updateStars(rating) {
+            stars.forEach(star => {
+                const val = parseInt(star.getAttribute('data-value'));
+                if (val <= rating) {
+                    star.classList.add('active'); star.classList.replace('fa-regular', 'fa-solid');
+                } else {
+                    star.classList.remove('active'); star.classList.replace('fa-solid', 'fa-regular');
+                }
+            });
+        }
+
+        function rateSeries(score) {
+            if (!authStatus) { if(confirm("Puan vermek için giriş yapmalısınız?")) window.location.href = loginUrl; return; }
+            fetch(rateUrl, {
+                method: 'POST', headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'application/json' },
+                body: JSON.stringify({score: score})
+            }).then(r => r.json()).then(d => { if(d.status === 'success') { updateStars(score); document.getElementById('avgRating').innerText = d.new_avg; } });
+        }
+
+        // LİSTEME EKLE (FAVORİ)
+        function toggleLike() {
+            if (!authStatus) { if(confirm("Listenize eklemek için giriş yapmalısınız?")) window.location.href = loginUrl; return; }
+            const btn = document.getElementById('likeBtn'); const icon = document.getElementById('heartIcon');
+            const text = document.getElementById('likeText'); const count = document.getElementById('likeCount');
+            
+            btn.style.transform = "scale(0.95)"; setTimeout(() => btn.style.transform = "scale(1)", 150);
+
+            fetch(likeUrl, { method: 'POST', headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'application/json' } })
+            .then(r => r.json()).then(d => {
+                if (d.liked) {
+                    btn.classList.add('like-active'); icon.classList.replace('fa-regular', 'fa-solid'); text.innerText = "Listemde";
+                } else {
+                    btn.classList.remove('like-active'); icon.classList.replace('fa-solid', 'fa-regular'); text.innerText = "Listeme Ekle";
+                }
+                count.innerText = d.count;
+            });
+        }
+
+        // --- YORUM BEĞENİ VE YANITLAMA (DÜZELTİLEN KISIM) ---
+        function toggleCommentLike(btn) {
+            const cid = btn.getAttribute('data-comment-id');
+            if(!authStatus) { if(confirm("Yorum beğenmek için giriş yapmalısınız?")) window.location.href = loginUrl; return; }
+            
+            // DÜZELTME: /api/comment/like/
+            fetch(`/api/comment/like/${cid}/`, { method: 'POST', headers: {'X-CSRFToken': csrfToken} })
+            .then(r=>r.json()).then(d=> {
+                const c = btn.parentElement.querySelector('.comment-like-count') || btn.nextElementSibling;
+                if(d.liked) { btn.classList.replace('fa-regular','fa-solid'); btn.classList.add('active'); }
+                else { btn.classList.replace('fa-solid','fa-regular'); btn.classList.remove('active'); }
+                if(c) c.innerText = d.count;
+            });
+        }
+        function toggleReplyForm(fid) {
+            if(!authStatus) { if(confirm("Yanıtlamak için giriş yapmalısınız?")) window.location.href=loginUrl; return; }
+            const f = document.getElementById(fid); f.style.display = f.style.display==='none' ? 'block' : 'none';
+        }
+        function prepareReply(pid, uname) {
+            if(!authStatus) { if(confirm("Yanıtlamak için giriş yapmalısınız?")) window.location.href=loginUrl; return; }
+            const f = document.getElementById('reply-form-'+pid); f.style.display='block';
+            const t = f.querySelector('textarea'); t.value = '@'+uname+' '; t.focus();
+        }
+        function deleteComment(btn) {
+            if(confirm('Yorumu silmek istediğinize emin misiniz?')) {
+                // DÜZELTME: /api/comment/delete/
+                fetch(`/api/comment/delete/${btn.getAttribute('data-comment-id')}/`, { method: 'POST', headers: {'X-CSRFToken': csrfToken} })
+                .then(r=>r.json()).then(d => { if(d.status==='success') location.reload(); });
+            }
+        }
+    </script>
+
+        <script>
+        // BİLDİRİM SİSTEMİ JS
+        function loadNotifications() {
+            const authStatus = document.getElementById('authStatus');
+            if(!authStatus || authStatus.value !== 'true') return;
+            fetch('/api/notifications/').then(r=>r.json()).then(d=> {
+                if(d.status === 'success') {
+                    const badge = document.getElementById('notifBadge');
+                    const list = document.getElementById('notifList');
+                    if(badge && list) {
+                        if(d.unread_count > 0) {
+                            badge.innerText = d.unread_count;
+                            badge.classList.remove('d-none');
+                        }
+                        let html = '<li><h6 class="dropdown-header">Bildirimler</h6></li>';
+                        if(d.notifications.length === 0) {
+                            html += '<li><span class="dropdown-item text-muted small">Bildirim yok.</span></li>';
+                        } else {
+                            d.notifications.forEach(n => {
+                                html += `<li><a class="dropdown-item text-wrap small ${n.is_read ? 'text-muted' : 'fw-bold'}" href="${n.link}" style="border-bottom: 1px solid var(--border-color, #eee); padding: 10px;"><i class="fa-solid fa-circle-info me-2 text-primary"></i>${n.message}<br><small class="text-secondary">${n.created_at}</small></a></li>`;
+                            });
+                        }
+                        list.innerHTML = html;
+                    }
+                }
+            }).catch(e => console.log(e));
+        }
+
+        function markNotificationsRead() {
+            const badge = document.getElementById('notifBadge');
+            if(badge && !badge.classList.contains('d-none')) {
+                const csrfToken = document.getElementById('csrfToken');
+                if(csrfToken) {
+                    fetch('/api/notifications/mark-read/', {method:'POST', headers:{'X-CSRFToken':csrfToken.value}});
+                    badge.classList.add('d-none');
+                    badge.innerText = '0';
+                }
+            }
+        }
+        document.addEventListener('DOMContentLoaded', loadNotifications);
+    </script>
+
+</body>
+</html>

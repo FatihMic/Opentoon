@@ -1,0 +1,184 @@
+{% load static %}
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tamamlanan Seriler - OpenToon</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <script>
+        (function() {
+            const storedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-bs-theme', storedTheme);
+        })();
+    </script>
+
+    <style>
+        :root { 
+            --primary: #7248f9; --bg-body: #0f0f12; --bg-card: #18181c; 
+            --text-main: #ffffff; --text-muted: #a0a0a0; --border-color: #26262e;
+            --nav-bg: rgba(15, 15, 18, 0.95);
+        }
+        [data-bs-theme="light"] { 
+            --bg-body: #f4f7f6; --bg-card: #ffffff; --text-main: #2d3436; 
+            --text-muted: #636e72; --border-color: #e0e0e0; --nav-bg: rgba(255, 255, 255, 0.95);
+        }
+        
+        body { background-color: var(--bg-body); color: var(--text-main); font-family: 'Inter', sans-serif; padding-top: 80px; padding-bottom: 50px; transition: 0.3s; }
+        h1, h2, h3, h4, h5, h6, .navbar-brand { font-family: 'Outfit', sans-serif; }
+        a { text-decoration: none; }
+        
+        .navbar { background-color: var(--nav-bg); border-bottom: 1px solid var(--border-color); backdrop-filter: blur(10px); }
+        .navbar-brand { color: var(--text-main) !important; font-weight: 700; }
+        .nav-link { color: var(--text-muted) !important; }
+
+        .library-header {
+            padding: 40px 0 30px;
+            margin-bottom: 40px;
+            border-bottom: 1px solid var(--border-color);
+            background: linear-gradient(0deg, var(--bg-body) 0%, rgba(220, 53, 69, 0.05) 100%);
+        }
+
+        .premium-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .premium-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
+        }
+        @media (max-width: 400px) {
+            .premium-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
+        }
+
+        .premium-card {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            aspect-ratio: 2/3;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .premium-card:hover {
+            transform: translateY(-8px);
+            border-color: #dc3545;
+            box-shadow: 0 15px 30px rgba(220, 53, 69, 0.25);
+        }
+        
+        .premium-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s ease;
+        }
+        .premium-card:hover img {
+            transform: scale(1.1);
+        }
+
+        .badge-tl {
+            position: absolute; top: 10px; left: 10px; z-index: 2;
+            background: rgba(0,0,0,0.7); color: #fff; padding: 4px 8px; 
+            border-radius: 6px; font-size: 0.7rem; font-weight: 700; 
+            backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.1);
+        }
+        .badge-tr {
+            position: absolute; top: 10px; right: 10px; z-index: 2;
+            padding: 4px 8px; border-radius: 6px; font-size: 0.65rem; font-weight: 800; 
+            color: #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            background: #ff4d4d;
+        }
+
+        .premium-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 40%, transparent 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 15px 12px;
+            pointer-events: none;
+        }
+        
+       .premium-title {
+            color: #fff;
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            line-height: 1.3;
+        }
+
+        .premium-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.7);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg fixed-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="{% url 'home' %}">
+                <i class="fa-solid fa-arrow-left me-2 text-primary"></i> Ana Sayfa
+            </a>
+        </div>
+    </nav>
+
+    <div class="library-header text-center">
+        <div class="container">
+            <h1 class="display-5 fw-bolder mb-2" style="letter-spacing: -1px;"><i class="fa-solid fa-flag-checkered text-danger me-3"></i>Tamamlanan Seriler</h1>
+            <p class="text-muted mb-0">Hikayesi sona ermiş, baştan sona tek solukta okuyabileceğin başyapıtlar.</p>
+        </div>
+    </div>
+
+    <div class="container">
+        
+        <div class="premium-grid" id="seriesGrid">
+            {% for seri in seriler %}
+            <div class="grid-item">
+                <a href="{% url 'manga_detay' seri.slug %}">
+                    <div class="premium-card">
+                        <span class="badge-tl">{{ seri.type|upper }}</span>
+                        <span class="badge-tr">FİNAL</span>
+                        
+                        {% if seri.cover_image %}<img src="{{ seri.cover_image.url }}" loading="lazy">
+                        {% else %}<div class="bg-secondary h-100 d-flex align-items-center justify-content-center"><i class="fa-solid fa-image fa-2x opacity-50"></i></div>{% endif %}
+                        
+                        <div class="premium-overlay">
+                            <div class="premium-title">{{ seri.title }}</div>
+                            <div class="premium-meta">
+                                <span class="text-warning"><i class="fa-solid fa-star me-1"></i>{{ seri.avg_score|default:"0.0"|floatformat:1 }}</span>
+                                <span class="text-info"><i class="fa-solid fa-eye me-1"></i>{{ seri.views|intword }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% empty %}
+                <div class="w-100 text-center text-muted py-5" style="grid-column: 1 / -1;">
+                    <i class="fa-solid fa-book-open fs-1 opacity-25 mb-3"></i>
+                    <p>Sistemde henüz final yapmış seri bulunamadı.</p>
+                </div>
+            {% endfor %}
+        </div>
+        
+    </div>
+
+</body>
+</html>

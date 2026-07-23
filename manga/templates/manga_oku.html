@@ -1,0 +1,400 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{{ seri.title }} - Bölüm {{ bolum.number|floatformat }}</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
+
+    <script>
+        (function() {
+            const storedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-bs-theme', storedTheme);
+        })();
+    </script>
+
+    <style>
+        :root {
+            --bg-color: #050505; --text-color: #fff; --panel-bg: rgba(15, 15, 15, 0.95);
+            --border-color: rgba(255,255,255,0.1); --primary: #7248f9;
+        }
+        [data-bs-theme="light"] {
+            --bg-color: #f8f9fa; --text-color: #212529; --panel-bg: rgba(255, 255, 255, 0.95);
+            --border-color: rgba(0,0,0,0.1);
+        }
+
+        body { background-color: var(--bg-color); color: var(--text-color); margin: 0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+
+        /* --- ÜST BAR --- */
+        .top-bar {
+            position: fixed; top: 0; left: 0; right: 0;
+            background: var(--panel-bg); backdrop-filter: blur(10px);
+            padding: 12px 20px; z-index: 1000;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            transition: transform 0.3s;
+        }
+        .top-bar.hidden { transform: translateY(-100%); }
+        .series-info { font-size: 1rem; font-weight: 700; text-align: center; width: 100%; }
+        .series-info small { display: block; font-size: 0.75rem; font-weight: 400; opacity: 0.7; }
+
+        /* --- OKUYUCU --- */
+        .webtoon-container { height: 100vh; overflow-y: auto; padding-top: 60px; padding-bottom: 80px; }
+        .webtoon-content { max-width: 800px; margin: 0 auto; }
+        .webtoon-image { width: 100%; display: block; }
+        
+        .swiper { width: 100%; height: 100vh; padding-top: 50px; padding-bottom: 60px; }
+        .swiper-slide { display: flex; justify-content: center; align-items: center; background: var(--bg-color); }
+        .manga-image { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+        /* --- ALT KONTROL PANELİ --- */
+        .control-bar {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 400px;
+            background: var(--panel-bg); border: 1px solid var(--border-color);
+            border-radius: 50px; padding: 10px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 2000;
+            transition: transform 0.3s, opacity 0.3s;
+        }
+        .control-bar.hidden { transform: translate(-50%, 150%); opacity: 0; }
+
+        .ctrl-btn {
+            background: transparent; border: none; color: var(--text-color);
+            width: 40px; height: 40px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; transition: 0.2s; text-decoration: none;
+        }
+        .ctrl-btn:hover { background: rgba(255,255,255,0.1); color: var(--primary); }
+        .ctrl-btn.disabled { opacity: 0.3; pointer-events: none; }
+        .page-indicator { font-size: 0.9rem; font-weight: bold; opacity: 0.8; font-variant-numeric: tabular-nums; }
+
+        /* --- BÖLÜM SONU PUANLAMA KARTI --- */
+        .rating-card {
+            background: var(--panel-bg); border: 1px solid var(--border-color);
+            border-radius: 20px; padding: 30px; text-align: center;
+            max-width: 400px; margin: 50px auto; box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .stars { display: flex; justify-content: center; gap: 10px; margin: 20px 0; }
+        .star-btn { 
+            background: none; border: none; color: #444; font-size: 2rem; cursor: pointer; transition: 0.2s; 
+        }
+        .star-btn:hover, .star-btn.active { color: #ffd700; transform: scale(1.2); }
+        .next-btn-main {
+            background: var(--primary); color: white; border: none;
+            padding: 12px 30px; border-radius: 30px; font-weight: bold;
+            text-decoration: none; display: inline-block; margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="mangaData" style="display: none;"
+         data-start-index="{{ start_index|default:0 }}"
+         data-series-slug="{{ seri.slug }}"
+         data-chapter-id="{{ bolum.id }}"
+         data-csrf-token="{{ csrf_token }}"
+         data-read-mode="{% if seri.type == 'webtoon' or seri.type == 'manhwa' or seri.type == 'manhua' or secili_mod == 'vertical' %}webtoon{% else %}manga{% endif %}">
+    </div>
+
+    <div class="top-bar" id="topBar">
+        <a href="{% url 'manga_detay' seri.slug %}" class="ctrl-btn" style="width:auto;"><i class="fa-solid fa-arrow-left"></i></a>
+        <div class="series-info">
+            {{ seri.title }}
+            <small>Bölüm {{ bolum.number|floatformat }}</small>
+        </div>
+        <div style="display: flex; gap: 5px;">
+            {% if seri.type == 'manga' %}
+                <button class="ctrl-btn" onclick="toggleMangaMode()" title="Okuma Yönünü Değiştir (Yatay / Dikey)"><i class="fa-solid fa-arrows-up-down-left-right"></i></button>
+            {% endif %}
+            <a href="{% url 'manga_bolum_indir' bolum.id %}" class="ctrl-btn" title="Bölümü İndir"><i class="fa-solid fa-download"></i></a>
+            <button class="ctrl-btn" onclick="toggleFullScreen()" title="Tam Ekran"><i class="fa-solid fa-expand"></i></button>
+        </div>
+    </div>
+
+    {% if seri.type == 'webtoon' or seri.type == 'manhwa' or seri.type == 'manhua' or secili_mod == 'vertical' %}
+        <div class="webtoon-container" id="webtoonContainer">
+            <div class="webtoon-content">
+                {% for sayfa in resimler %}
+                    <img src="{{ sayfa.image.url }}" class="webtoon-image" id="page-{{ forloop.counter0 }}" loading="lazy">
+                {% empty %}
+                    <div class="text-center py-5 text-muted">Resim Yok.</div>
+                {% endfor %}
+                
+                <div class="rating-card">
+                    <h4>Bölümü Beğendin mi?</h4>
+                    <p class="text-muted small">Bu bölüme puan ver!</p>
+                    <div class="stars" id="webtoonStars">
+                        <button class="star-btn" onclick="rateSeries(1)"><i class="fa-solid fa-star"></i></button>
+                        <button class="star-btn" onclick="rateSeries(2)"><i class="fa-solid fa-star"></i></button>
+                        <button class="star-btn" onclick="rateSeries(3)"><i class="fa-solid fa-star"></i></button>
+                        <button class="star-btn" onclick="rateSeries(4)"><i class="fa-solid fa-star"></i></button>
+                        <button class="star-btn" onclick="rateSeries(5)"><i class="fa-solid fa-star"></i></button>
+                    </div>
+                    {% if sonraki_bolum %}
+                        <a href="{% url 'manga_oku' seri.slug sonraki_bolum.number|floatformat %}" class="next-btn-main">Sonraki Bölüm <i class="fa-solid fa-arrow-right"></i></a>
+                    {% else %}
+                        <a href="{% url 'manga_detay' seri.slug %}" class="btn btn-outline-light rounded-pill">Listeye Dön</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="swiper mySwiper">
+            <div class="swiper-wrapper">
+                {% for sayfa in resimler %}
+                    <div class="swiper-slide">
+                        <img src="{{ sayfa.image.url }}" class="manga-image" loading="lazy">
+                    </div>
+                {% endfor %}
+                
+                <div class="swiper-slide">
+                    <div class="rating-card">
+                        <h4>Bölümü Beğendin mi?</h4>
+                        <div class="stars" id="mangaStars">
+                            <button class="star-btn" onclick="rateSeries(1)"><i class="fa-solid fa-star"></i></button>
+                            <button class="star-btn" onclick="rateSeries(2)"><i class="fa-solid fa-star"></i></button>
+                            <button class="star-btn" onclick="rateSeries(3)"><i class="fa-solid fa-star"></i></button>
+                            <button class="star-btn" onclick="rateSeries(4)"><i class="fa-solid fa-star"></i></button>
+                            <button class="star-btn" onclick="rateSeries(5)"><i class="fa-solid fa-star"></i></button>
+                        </div>
+                        <div id="ratingMsg" class="mb-3 fw-bold text-success" style="display:none;">Puan Gönderildi!</div>
+                        {% if sonraki_bolum %}
+                            <a href="{% url 'manga_oku' seri.slug sonraki_bolum.number|floatformat %}" class="next-btn-main">Sonraki Bölüm</a>
+                        {% else %}
+                            <a href="{% url 'manga_detay' seri.slug %}" class="btn btn-outline-light rounded-pill">Listeye Dön</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="control-bar" id="controlBar">
+        {% if onceki_bolum %}
+            <a href="{% url 'manga_oku' seri.slug onceki_bolum.number|floatformat %}" class="ctrl-btn" style="font-size:1rem;"><i class="fa-solid fa-backward-step"></i></a>
+        {% else %}
+            <button class="ctrl-btn disabled"><i class="fa-solid fa-backward-step"></i></button>
+        {% endif %}
+
+        <button class="ctrl-btn" id="prevPageBtn"><i class="fa-solid fa-chevron-left"></i></button>
+        
+        <span class="page-indicator" id="pageInfo">1 / ?</span>
+
+        <button class="ctrl-btn" id="nextPageBtn"><i class="fa-solid fa-chevron-right"></i></button>
+
+        {% if sonraki_bolum %}
+            <a href="{% url 'manga_oku' seri.slug sonraki_bolum.number|floatformat %}" class="ctrl-btn" style="font-size:1rem;"><i class="fa-solid fa-forward-step"></i></a>
+        {% else %}
+            <button class="ctrl-btn disabled"><i class="fa-solid fa-forward-step"></i></button>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
+    <script>
+        const dataDiv = document.getElementById('mangaData');
+        const startIndex = parseInt(dataDiv.dataset.startIndex) || 0;
+        const readMode = dataDiv.dataset.readMode;
+        const topBar = document.getElementById('topBar');
+        const controlBar = document.getElementById('controlBar');
+        const pageInfo = document.getElementById('pageInfo');
+        
+        // Manga Modu Değiştirici
+        if ('{{ seri.type }}' === 'manga' && !window.location.search.includes('mode=')) {
+            let pref = localStorage.getItem('manga_mode') || 'horizontal';
+            if (pref === 'vertical' && '{{ secili_mod }}' !== 'vertical') {
+                window.location.replace(window.location.pathname + '?mode=vertical');
+            }
+        }
+
+        function toggleMangaMode() {
+            let current = localStorage.getItem('manga_mode') || 'horizontal';
+            let next = current === 'horizontal' ? 'vertical' : 'horizontal';
+            localStorage.setItem('manga_mode', next);
+            window.location.search = '?mode=' + next;
+        }
+        
+        function rateSeries(score) {
+            const starContainers = document.querySelectorAll('.stars');
+            starContainers.forEach(container => {
+                const buttons = container.querySelectorAll('button');
+                buttons.forEach((btn, index) => {
+                    if (index < score) btn.classList.add('active', 'text-warning');
+                    else btn.classList.remove('active', 'text-warning');
+                });
+            });
+
+            fetch(`/rate/${dataDiv.dataset.seriesSlug}/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': dataDiv.dataset.csrfToken },
+                body: JSON.stringify({ score: score })
+            }).then(res => res.json()).then(data => {
+                if(data.success) {
+                    const msg = document.getElementById('ratingMsg');
+                    if(msg) { msg.style.display='block'; msg.innerText = 'Teşekkürler: ' + data.new_average; }
+                } else if(data.error === 'not_authenticated') {
+                    alert("Puan vermek için giriş yapmalısın.");
+                }
+            });
+        }
+
+        function saveProgress(pageNum) {
+            fetch('/api/save-progress/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': dataDiv.dataset.csrfToken },
+                body: JSON.stringify({ series_slug: dataDiv.dataset.seriesSlug, chapter_id: dataDiv.dataset.chapterId, page_num: pageNum })
+            }).catch(() => {});
+        }
+
+        let currentPage = startIndex + 1;
+        let totalPages = 0;
+
+        if (readMode === 'webtoon' || readMode === 'manhwa' || readMode === 'manhua') {
+            const images = document.querySelectorAll('.webtoon-image');
+            totalPages = images.length;
+            pageInfo.innerText = `${currentPage} / ${totalPages}`;
+
+            document.getElementById('prevPageBtn').onclick = () => {
+                const targetPage = Math.max(0, currentPage - 2); 
+                const el = document.getElementById(`page-${targetPage}`);
+                if(el) el.scrollIntoView({behavior:'smooth'});
+            };
+            document.getElementById('nextPageBtn').onclick = () => {
+                const el = document.getElementById(`page-${currentPage}`);
+                if(el) el.scrollIntoView({behavior:'smooth'});
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if(entry.isIntersecting) {
+                        const idx = parseInt(entry.target.id.split('-')[1]) + 1;
+                        currentPage = idx;
+                        pageInfo.innerText = `${currentPage} / ${totalPages}`;
+                        saveProgress(currentPage);
+                    }
+                });
+            }, {
+                rootMargin: "-45% 0px -45% 0px",
+                threshold: 0
+            });
+            images.forEach(img => observer.observe(img));
+
+            setTimeout(() => {
+                 const el = document.getElementById(`page-${startIndex}`);
+                 if(el) el.scrollIntoView();
+            }, 300);
+
+        } else {
+            const swiper = new Swiper(".mySwiper", {
+                initialSlide: startIndex,
+                slidesPerView: 1,
+                spaceBetween: 20,
+                on: {
+                    slideChange: function() {
+                        const idx = this.activeIndex + 1;
+                        const realTotal = this.slides.length - 1; 
+                        if(idx <= realTotal) {
+                            pageInfo.innerText = `${idx} / ${realTotal}`;
+                            saveProgress(idx);
+                        } else {
+                            pageInfo.innerText = "Puanla";
+                        }
+                    }
+                }
+            });
+            
+            const total = document.querySelectorAll('.swiper-slide').length - 1;
+            pageInfo.innerText = `${startIndex + 1} / ${total}`;
+
+            document.getElementById('prevPageBtn').onclick = () => swiper.slidePrev();
+            document.getElementById('nextPageBtn').onclick = () => swiper.slideNext();
+        }
+
+        let hidden = false;
+        document.body.addEventListener('click', (e) => {
+            if(e.target.closest('.control-bar') || e.target.closest('.top-bar') || e.target.closest('.rating-card')) return;
+            hidden = !hidden;
+            if(hidden) { topBar.classList.add('hidden'); controlBar.classList.add('hidden'); }
+            else { topBar.classList.remove('hidden'); controlBar.classList.remove('hidden'); }
+        });
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+            else if (document.exitFullscreen) document.exitFullscreen();
+        }
+
+        // HATA / ŞİKAYET MODALI
+        function openFeedbackModal() {
+            // Sadece form modülünü açıyoruz, authStatus'a gerek yok okuma ekranında herkes hata bildirebilir.
+            let isAuthenticated = "{{ user.is_authenticated|yesno:'true,false' }}" === "true";
+            if(!isAuthenticated) {
+                alert("Hata veya şikayet bildirmek için önce oturum açmalısınız.");
+                return;
+            }
+            new bootstrap.Modal(document.getElementById('feedbackModal')).show();
+        }
+
+        function sendFeedback() {
+            const type = document.getElementById('fbType').value;
+            const message = document.getElementById('fbMessage').value;
+            const currentUrl = window.location.href; 
+            const csrfToken = dataDiv.dataset.csrfToken;
+            if (!message) { alert("Lütfen bir mesaj yazın."); return; }
+            fetch('/api/feedback/', { 
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                body: JSON.stringify({ type: type, message: message, url: currentUrl })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') { alert(data.message); location.reload(); } else { alert("Hata: " + data.message); }
+            });
+        }
+    </script>
+
+    <!-- Geri Bildirim (Genel ile Aynı) -->
+    <button class="btn btn-primary rounded-circle shadow-lg d-flex align-items-center justify-content-center" 
+            style="position: fixed; bottom: 30px; right: 30px; width: 50px; height: 50px; z-index: 9999;"
+            onclick="openFeedbackModal()">
+        <i class="fa-solid fa-comment-dots"></i>
+    </button>
+
+    <div class="modal fade" id="feedbackModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="background: var(--panel-bg); border: 1px solid var(--border-color); color: var(--text-color);">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title fw-bold">Geri Bildirim</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="feedbackForm">
+                        <div class="mb-3">
+                            <label class="form-label" style="color: var(--text-color);">Konu</label>
+                            <select class="form-select bg-dark text-white border-secondary" id="fbType">
+                                <option value="hata" style="color: #ff9800;">⚠️ Hata Bildirimi</option>
+                                <option value="oneri" style="color: #00bcd4;">💡 Öneri</option>
+                                <option value="sikayet" style="color: #e91e63;">😡 Şikayet</option>
+                                <option value="diger" style="color: #9e9e9e;">💬 Diğer</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" style="color: var(--text-color);">Mesajınız</label>
+                            <textarea class="form-control bg-dark text-white border-secondary" id="fbMessage" rows="4"></textarea>
+                        </div>
+                        <div class="text-end">
+                            <button type="button" class="btn btn-primary rounded-pill px-4" onclick="sendFeedback()">Gönder</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS (Modal için Gerekli) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

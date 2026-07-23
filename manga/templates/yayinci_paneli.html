@@ -1,0 +1,480 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yayıncı Stüdyosu - OpenToon</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        (function() {
+            const getStoredTheme = () => localStorage.getItem('theme');
+            const getPreferredTheme = () => {
+                const storedTheme = getStoredTheme();
+                if (storedTheme) { return storedTheme; }
+                return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            };
+            const setTheme = theme => {
+                if (theme === 'auto') {
+                    document.documentElement.setAttribute('data-bs-theme', (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+                } else {
+                    document.documentElement.setAttribute('data-bs-theme', theme);
+                }
+            };
+            setTheme(getPreferredTheme());
+        })();
+    </script>
+
+    <style>
+        :root {
+            --primary-color: #7248f9; --primary-hover: #5b32e0;
+            --bg-body: #101015; --bg-card: #1a1a20;
+            --text-main: #ffffff; --text-muted: #b0b0b0;
+            --input-bg: #222228; --border-color: #2a2a35;
+            --dropzone-bg: #15151a; --shadow-card: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        [data-bs-theme="light"] {
+            --bg-body: #f4f6f8; --bg-card: #ffffff;
+            --text-main: #212529; --text-muted: #6c757d;
+            --input-bg: #ffffff; --border-color: #dee2e6;
+            --dropzone-bg: #f8f9fa; --shadow-card: 0 10px 30px rgba(0,0,0,0.05);
+        }
+
+        body { background-color: var(--bg-body); color: var(--text-main); font-family: 'Inter', sans-serif; transition: 0.3s; min-height: 100vh; }
+
+        .studio-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 40px; box-shadow: var(--shadow-card); margin-bottom: 30px; }
+        .form-label { color: var(--text-muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .form-control, .form-select { background-color: var(--input-bg) !important; border: 1px solid var(--border-color) !important; color: var(--text-main) !important; padding: 10px 12px; border-radius: 8px; font-size: 0.95rem; }
+        .form-select { padding-right: 30px !important; }
+        .form-control:focus, .form-select:focus { border-color: var(--primary-color) !important; box-shadow: 0 0 0 3px rgba(114, 72, 249, 0.25) !important; }
+        .input-group .btn { border-color: var(--border-color); color: var(--text-muted); }
+        .input-group .btn:hover { border-color: var(--primary-color); color: var(--primary-color); background: transparent; }
+
+        .dropzone { background-color: var(--dropzone-bg) !important; border: 2px dashed var(--border-color) !important; border-radius: 12px; min-height: 250px; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 15px; padding: 20px; color: var(--text-muted); transition: 0.3s; align-content: flex-start; }
+        .dropzone.dz-started { justify-content: flex-start; align-items: flex-start; }
+        .dropzone:hover { border-color: var(--primary-color) !important; color: var(--primary-color); }
+        .btn-publish { background-color: var(--primary-color); border: none; padding: 15px; border-radius: 8px; font-weight: 700; width: 100%; color: white; margin-top: 20px; transition: 0.2s; }
+        .btn-publish:hover { background-color: var(--primary-hover); transform: translateY(-2px); }
+
+        .modal-content { background-color: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-main); }
+        .modal-header, .modal-footer { border-color: var(--border-color); }
+        .btn-close { filter: invert(1) grayscale(100%) brightness(200%); }
+        [data-bs-theme="light"] .btn-close { filter: none; }
+        
+        .category-box { background-color: var(--input-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; max-height: 150px; overflow-y: auto; }
+        .form-check-input { background-color: var(--bg-body); border-color: var(--border-color); cursor: pointer; }
+        .form-check-input:checked { background-color: var(--primary-color); border-color: var(--primary-color); }
+        
+        .table { color: var(--text-main); }
+        .table-hover tbody tr:hover { background-color: rgba(114, 72, 249, 0.05); }
+        .table td, .table th { border-color: var(--border-color); }
+
+        .dropdown-menu { background-color: var(--bg-card); border: 1px solid var(--border-color); }
+        .dropdown-item { color: var(--text-main); }
+        .dropdown-item:hover { background-color: rgba(114, 72, 249, 0.1); color: var(--primary-color); }
+        .dropdown-item.active { background-color: var(--primary-color); color: #fff; }
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.0.0/css/flag-icons.min.css"/>
+</head>
+<body>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold m-0"><i class="fa-solid fa-layer-group text-primary me-2"></i> Yayıncı Stüdyosu</h2>
+                <div class="d-flex align-items-center gap-3">
+                    <a href="{% url 'home' %}" class="btn btn-outline-secondary rounded-pill fw-bold btn-sm px-3"><i class="fa-solid fa-arrow-left me-2"></i>Siteye Dön</a>
+                </div>
+            </div>
+
+            <div class="studio-card">
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label">Yayınlanacak Seri</label>
+                        <div class="input-group">
+                            <select id="seriesSelect" class="form-select">
+                                <option value="">Seçiniz...</option>
+                                {% for seri in seriler %}<option value="{{ seri.id }}">{{ seri.title }}</option>{% endfor %}
+                            </select>
+                            <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#newSeriesModal"><i class="fa-solid fa-plus"></i></button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Çeviri Grubu</label>
+                        <div class="input-group">
+                            <select id="groupSelect" class="form-select">
+                                {% for grup in gruplar %}<option value="{{ grup.id }}">{{ grup.name }}</option>{% endfor %}
+                            </select>
+                            <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#newGroupModal"><i class="fa-solid fa-plus"></i></button>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Bölüm No</label>
+                        <input type="number" step="0.1" id="bolumNo" class="form-control" placeholder="Örn: 1">
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label">Bölüm Başlığı (Opsiyonel)</label>
+                        <input type="text" id="bolumBaslik" class="form-control" placeholder="Bölüm adı...">
+                    </div>
+                </div>
+
+                <label class="form-label mb-2">Sayfa Resimleri</label>
+                <form action="{% url 'yayinci_paneli' %}" class="dropzone" id="mangaDropzone" method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="dz-message" data-dz-message>
+                        <i class="fa-solid fa-cloud-arrow-up fa-3x mb-3"></i><br>
+                        <span class="fw-bold">Resimleri buraya sürükle veya tıkla</span>
+                        <p class="small opacity-75 mt-2">JPG, PNG, WEBP desteklenir.</p>
+                    </div>
+                </form>
+                <button id="publishBtn" class="btn-publish"><i class="fa-solid fa-rocket me-2"></i> BÖLÜMÜ YAYINLA</button>
+            </div>
+
+            <div class="studio-card">
+                <h4 class="fw-bold mb-4 text-warning"><i class="fa-solid fa-pen-to-square me-2"></i> Serileri Düzenle</h4>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr class="text-muted small text-uppercase">
+                                <th>Kapak</th>
+                                <th>Seri Adı</th>
+                                <th>Durum</th>
+                                <th class="text-end" style="min-width: 200px;">İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for seri in seriler %}
+                            <tr>
+                                <td>
+                                    {% if seri.cover_image %}<img src="{{ seri.cover_image.url }}" width="40" height="60" style="object-fit: cover; border-radius: 4px;">
+                                    {% else %}<div style="width:40px; height:60px; background:#333; border-radius:4px;"></div>{% endif %}
+                                </td>
+                                <td class="fw-bold">{{ seri.title }}</td>
+                                <td>
+                                    {% if seri.status == 'tamamlandi' %}<span class="badge bg-danger">Final</span>
+                                    {% elif seri.status == 'ara' %}<span class="badge bg-warning text-dark">Ara Verdi</span>
+                                    {% else %}<span class="badge bg-success">Devam</span>{% endif %}
+                                </td>
+                                <td class="text-end">
+                                   <button type="button" class="btn btn-sm btn-outline-info me-1" onclick="openChapterManager('{{ seri.id }}', '{{ seri.title|escapejs }}')">
+                                        <i class="fa-solid fa-list"></i> Bölümler
+                                   </button>
+                                   <button type="button" class="btn btn-sm btn-outline-warning" onclick="openEditModal('{{ seri.id }}')">
+                                        <i class="fa-solid fa-pen-to-square"></i> Düzenle
+                                   </button>
+                                   <button type="button" class="btn btn-sm btn-outline-danger ms-1" onclick="deleteSeries('{{ seri.id }}', '{{ seri.title|escapejs }}')">
+                                        <i class="fa-solid fa-trash"></i> Sil
+                                   </button>
+                                </td>
+                            </tr>
+                            {% empty %}<tr><td colspan="4" class="text-center text-muted">Henüz seri eklenmemiş.</td></tr>{% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="chapterManagerModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-info">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title fw-bold text-info" id="cmTitle">Bölüm Yönetimi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr class="text-muted small">
+                                <th>Bölüm Adı/No</th>
+                                <th>Sayfa Sayısı</th>
+                                <th class="text-end">İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody id="chapterListBody">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="pageManagerModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content border-primary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title fw-bold text-primary" id="pmTitle">Sayfa Yönetimi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-4 p-3 rounded" style="background: var(--input-bg); border: 1px dashed var(--border-color);">
+                    <label class="form-label text-white">Eksik Sayfa Ekle (Bölümün en sonuna eklenir)</label>
+                    <div class="d-flex gap-2">
+                        <input type="file" id="newPagesInput" multiple class="form-control" accept="image/*">
+                        <button class="btn btn-primary fw-bold" id="uploadNewPagesBtn" onclick="addNewPages()"><i class="fa-solid fa-upload"></i> Yükle</button>
+                    </div>
+                </div>
+                
+                <h6 class="fw-bold mb-3 text-muted">Bölümdeki Sayfalar (Silmek için X'e bas)</h6>
+                <div class="row g-3" id="pageGridBody">
+                    </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="newSeriesModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Yeni Seri Oluştur</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="newSeriesForm">
+                    <div class="mb-3"><label class="form-label">Seri Adı</label><input type="text" name="title" class="form-control" required></div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Türü</label>
+                            <select name="type" class="form-select">
+                                <option value="manga">Manga</option><option value="manhwa">Manhwa</option><option value="manhua">Manhua</option><option value="webtoon">Webtoon</option>
+                            </select>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Durumu</label>
+                            <select name="status" class="form-select">
+                                <option value="devam">Devam Ediyor</option><option value="tamamlandi">Final Yaptı</option><option value="ara">Ara Verildi</option>
+                            </select>
+                        </div>
+                        <div class="col-12 mb-3"><label class="form-label">Yazar / Çizer</label><input type="text" name="author" class="form-control"></div>
+                    </div>
+                    <div class="mb-3"><label class="form-label">Kategoriler</label>
+                        <div class="category-box"><div class="row g-2">
+                                {% for kat in kategoriler %}<div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="categories" value="{{ kat.id }}" id="cat_{{ kat.id }}"><label class="form-check-label" for="cat_{{ kat.id }}">{{ kat.name }}</label></div></div>{% empty %}<p class="text-muted small m-0 text-center">Kategori yok.</p>{% endfor %}
+                        </div></div>
+                    </div>
+                    <div class="mb-3"><label class="form-label">Kapak Resmi</label><input type="file" name="cover_image" class="form-control" required></div>
+                    <div class="mb-3"><label class="form-label">Açıklama</label><textarea name="description" class="form-control" rows="3"></textarea></div>
+                </form>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button><button type="button" class="btn btn-primary" onclick="saveNewSeries()">Oluştur ve Seç</button></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editSeriesModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-warning">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title fw-bold text-warning">Seriyi Düzenle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editSeriesForm">
+                    <input type="hidden" name="series_id" id="edit_series_id">
+                    <div class="mb-3"><label class="form-label">Seri Adı</label><input type="text" name="title" id="edit_title" class="form-control"></div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Türü</label>
+                            <select name="type" id="edit_type" class="form-select">
+                                <option value="manga">Manga</option><option value="manhwa">Manhwa</option><option value="manhua">Manhua</option><option value="webtoon">Webtoon</option>
+                            </select>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Durumu</label>
+                            <select name="status" id="edit_status" class="form-select">
+                                <option value="devam">Devam Ediyor</option><option value="tamamlandi">Final Yaptı</option><option value="ara">Ara Verildi</option>
+                            </select>
+                        </div>
+                        <div class="col-12 mb-3"><label class="form-label">Yazar</label><input type="text" name="author" id="edit_author" class="form-control"></div>
+                    </div>
+                    <div class="mb-3"><label class="form-label">Kategoriler</label>
+                        <div class="category-box"><div class="row g-2">
+                                {% for kat in kategoriler %}<div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="categories" value="{{ kat.id }}" id="edit_cat_{{ kat.id }}"><label class="form-check-label" for="edit_cat_{{ kat.id }}">{{ kat.name }}</label></div></div>{% endfor %}
+                        </div></div>
+                    </div>
+                    <div class="mb-3"><label class="form-label">Açıklama</label><textarea name="description" id="edit_description" class="form-control" rows="3"></textarea></div>
+                    <div class="mb-3"><label class="form-label">Yeni Kapak (Değişmeyecekse boş bırak)</label><input type="file" name="cover_image" class="form-control"></div>
+                </form>
+            </div>
+            <div class="modal-footer border-secondary"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button><button type="button" class="btn btn-warning fw-bold" onclick="updateSeries()">Kaydet ve Güncelle</button></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="newGroupModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title fw-bold">Yeni Grup Oluştur</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body"><form id="newGroupForm"><div class="mb-3"><label class="form-label">Grup Adı</label><input type="text" name="name" class="form-control" required></div></form></div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button><button type="button" class="btn btn-primary" onclick="saveNewGroup()">Oluştur ve Seç</button></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
+<script>
+    // TEMA
+    (() => {
+        'use strict'
+        const getStoredTheme = () => localStorage.getItem('theme')
+        const setStoredTheme = theme => localStorage.setItem('theme', theme)
+        const getPreferredTheme = () => { const storedTheme = getStoredTheme(); return storedTheme ? storedTheme : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); }
+        const setTheme = theme => { document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme) }
+        setTheme(getPreferredTheme())
+        const showActiveTheme = (theme) => {
+            const activeIcon = document.querySelector('#theme-icon-active'); if (!activeIcon) return;
+            activeIcon.className = `fa-solid ${{ 'light':'fa-sun','dark':'fa-moon','auto':'fa-circle-half-stroke'}[theme] || 'fa-circle-half-stroke'}`; document.querySelectorAll('[data-bs-theme-value]').forEach(el => el.classList.remove('active')); const btn = document.querySelector(`[data-bs-theme-value="${theme}"]`); if (btn) btn.classList.add('active'); } window.addEventListener('DOMContentLoaded', () => { showActiveTheme(getStoredTheme() || 'auto'); document.querySelectorAll('[data-bs-theme-value]').forEach(t => t.addEventListener('click', () => { const theme = t.getAttribute('data-bs-theme-value'); setStoredTheme(theme); setTheme(theme); showActiveTheme(theme); })) }) })() // DROPZONE YÜKLEME Dropzone.autoDiscover = false; const myDropzone = new Dropzone("#mangaDropzone", { autoProcessQueue: false, uploadMultiple: true, parallelUploads: 500, maxFiles: 500, acceptedFiles: "image/*", paramName: function() { return "file"; }, addRemoveLinks: true, init: function() { var submitBtn = document.querySelector("#publishBtn"); var dz = this; submitBtn.addEventListener("click", function(e) { e.preventDefault(); e.stopPropagation(); if (!document.querySelector('#seriesSelect').value || !document.querySelector('#bolumNo').value) { alert("⚠️ Lütfen Seri ve Bölüm Numarasını giriniz!"); return; } if (dz.getQueuedFiles().length === 0 && dz.files.length > 0) { for (var i = 0; i < dz.files.length; i++) dz.files[i].status = Dropzone.QUEUED; } if (dz.files.length > 0) { submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Yükleniyor...'; submitBtn.disabled = true; dz.processQueue(); } else { alert("⚠️ Lütfen en az bir resim ekleyin!"); } }); this.on("sendingmultiple", function(data, xhr, fd) { fd.append("series", document.querySelector('#seriesSelect').value); fd.append("group", document.querySelector('#groupSelect').value); fd.append("number", document.querySelector('#bolumNo').value); fd.append("title", document.querySelector('#bolumBaslik').value); }); this.on("successmultiple", function(files, response) { alert("✅ Yüklendi!"); location.reload(); }); this.on("errormultiple", function(files, response) { submitBtn.innerHTML = '<i class="fa-solid fa-rocket me-2"></i> BÖLÜMÜ YAYINLA'; submitBtn.disabled = false; alert("❌ Yükleme Hatası!"); }); } }); // --- YENİ EKLENEN: BÖLÜM VE SAYFA YÖNETİMİ JS --- let currentSeriesId = null; let currentChapterId = null; function openChapterManager(id, title) { currentSeriesId = id; document.getElementById('cmTitle').innerText = title + " - Bölümleri"; new bootstrap.Modal(document.getElementById('chapterManagerModal')).show(); fetchChapters(); } function fetchChapters() { const fd = new FormData(); fd.append('action', 'get_chapters'); fd.append('series_id', currentSeriesId); fetch("{% url 'yayinci_bolum_yonetimi' %}", { method: 'POST', body: fd, headers: {'X-CSRFToken': '{{ csrf_token }}'} })
+        .then(r=>r.json()).then(d=>{
+            if(d.status === 'success'){
+                let html = '';
+                d.bolumler.forEach(b => {
+                    html += `<tr><td class="fw-bold">Bölüm ${b.number} ${b.title ? ' - '+b.title : ''}</td><td>${b.page_count} Sayfa</td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-primary me-1" onclick="openPageManager('${b.id}', '${b.number}')"><i class="fa-solid fa-images"></i> Sayfalar</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteChapter('${b.id}')"><i class="fa-solid fa-trash"></i></button>
+                        </td></tr>`;
+                });
+                document.getElementById('chapterListBody').innerHTML = html || '<tr><td colspan="3" class="text-center">Bölüm yok.</td></tr>';
+            }
+        });
+    }
+
+    function deleteChapter(id) {
+        if(!confirm('Bu bölümü TAMAMEN silmek istediğinize emin misiniz? (Geri alınamaz)')) return;
+        const fd = new FormData(); fd.append('action', 'delete_chapter'); fd.append('chapter_id', id);
+        fetch("{% url 'yayinci_bolum_yonetimi' %}", { method: 'POST', body: fd, headers: {'X-CSRFToken': '{{ csrf_token }}'} })
+        .then(r=>r.json()).then(d=>{ if(d.status==='success') fetchChapters(); });
+    }
+
+    function deleteSeries(id, title) {
+        console.log("Sil butonuna tıklandı! ID:", id, "Başlık:", title);
+        if(!confirm(`"${title}" serisini ve içindeki TÜM BÖLÜMLERİ silmek istediğinize emin misiniz? (Geri alınamaz!)`)) return;
+        const fd = new FormData(); fd.append('action', 'delete_series'); fd.append('series_id', id);
+        fetch("{% url 'yayinci_bolum_yonetimi' %}", { method: 'POST', body: fd, headers: {'X-CSRFToken': '{{ csrf_token }}'} })
+        .then(r=>r.json()).then(d=>{ 
+            console.log("Sunucudan gelen yanıt:", d);
+            if(d.status==='success') { location.reload(); }
+            else { alert('Hata: ' + d.message); }
+        }).catch(err => {
+            console.error("Fetch Hatası:", err);
+            alert("Bir ağ hatası oluştu: " + err);
+        });
+    }
+
+    function openPageManager(id, num) {
+        currentChapterId = id;
+        document.getElementById('pmTitle').innerText = "Bölüm " + num + " - Sayfalar";
+        bootstrap.Modal.getInstance(document.getElementById('chapterManagerModal')).hide(); // Bölüm modalını kapat
+        new bootstrap.Modal(document.getElementById('pageManagerModal')).show(); // Sayfa modalını aç
+        fetchPages();
+    }
+
+    function fetchPages() {
+        const fd = new FormData(); fd.append('action', 'get_pages'); fd.append('chapter_id', currentChapterId);
+        fetch("{% url 'yayinci_bolum_yonetimi' %}", { method: 'POST', body: fd, headers: {'X-CSRFToken': '{{ csrf_token }}'} })
+        .then(r=>r.json()).then(d=>{
+            if(d.status === 'success'){
+                let html = '';
+                d.sayfalar.forEach(s => {
+                    html += `<div class="col-4 col-md-3 col-lg-2 position-relative">
+                        <img src="${s.url}" class="img-fluid rounded border border-secondary" style="height:150px; object-fit:cover; width:100%;">
+                        <span class="badge bg-dark position-absolute bottom-0 start-0 m-2">Sayfa ${s.num}</span>
+                        <button class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2 rounded-circle shadow" onclick="deletePage('${s.id}')"><i class="fa-solid fa-xmark"></i></button>
+                    </div>`;
+                });
+                document.getElementById('pageGridBody').innerHTML = html || '<div class="col-12 text-center">Sayfa yok.</div>';
+            }
+        });
+    }
+
+    function deletePage(id) {
+        if(!confirm('Sayfa silinsin mi? Sonraki sayfalar otomatik öne kaydırılacak.')) return;
+        const fd = new FormData(); fd.append('action', 'delete_page'); fd.append('page_id', id);
+        fetch("{% url 'yayinci_bolum_yonetimi' %}", { method: 'POST', body: fd, headers: {'X-CSRFToken': '{{ csrf_token }}'} })
+        .then(r=>r.json()).then(d=>{ if(d.status==='success') fetchPages(); });
+    }
+
+    function addNewPages() {
+        const input = document.getElementById('newPagesInput');
+        const btn = document.getElementById('uploadNewPagesBtn');
+        if(input.files.length === 0) { alert('Resim seçmediniz!'); return; }
+        
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Yükleniyor...'; btn.disabled = true;
+        const fd = new FormData(); fd.append('action', 'add_pages'); fd.append('chapter_id', currentChapterId);
+        for(let i=0; i<input.files.length; i++) fd.append('files', input.files[i]);
+
+        fetch("{% url 'yayinci_bolum_yonetimi' %}", { method: 'POST', body: fd, headers: {'X-CSRFToken': '{{ csrf_token }}'} })
+        .then(r=>r.json()).then(d=>{ 
+            btn.innerHTML = '<i class="fa-solid fa-upload"></i> Yükle'; btn.disabled = false; input.value = '';
+            if(d.status==='success') fetchPages(); else alert('Hata: ' + d.message);
+        });
+    }
+
+    // Sayfa yönetimi kapanınca otomatik Bölüm listesine dön!
+    document.getElementById('pageManagerModal').addEventListener('hidden.bs.modal', function () {
+        if(currentSeriesId) { new bootstrap.Modal(document.getElementById('chapterManagerModal')).show(); fetchChapters(); }
+    });
+
+    // ESKİ FONKSİYONLAR (Seri düzenleme vs.)
+    function saveNewSeries() { const fd = new FormData(document.getElementById('newSeriesForm')); fetch("{% url 'hizli_seri_ekle' %}", { method: 'POST', body: fd, headers: {'X-CSRFToken': '{{ csrf_token }}'} }).then(r=>r.json()).then(d=>{ if(d.status==='success') location.reload(); else alert("Hata: "+d.message); }); }
+    function saveNewGroup() { const fd = new FormData(document.getElementById('newGroupForm')); fetch("{% url 'hizli_grup_ekle' %}", { method: 'POST', body: fd, headers: {'X-CSRFToken': '{{ csrf_token }}'} }).then(r=>r.json()).then(d=>{ if(d.status==='success') location.reload(); else alert("Hata: "+d.message); }); }
+    function openEditModal(id) { fetch(`/api/seri-getir/${id}/`).then(r=>r.json()).then(d=>{ if(d.status==='success'){ const s=d.data; document.getElementById('edit_series_id').value=s.id; document.getElementById('edit_title').value=s.title; document.getElementById('edit_type').value=s.type; document.getElementById('edit_status').value=s.status||'devam'; document.getElementById('edit_author').value=s.author; document.getElementById('edit_description').value=s.description; document.querySelectorAll('#editSeriesForm input[type="checkbox"]').forEach(c=>c.checked=false); s.categories.forEach(cid=>{ const cb=document.getElementById(`edit_cat_${cid}`); if(cb) cb.checked=true; }); new bootstrap.Modal(document.getElementById('editSeriesModal')).show(); }}); }
+    function updateSeries() { const fd = new FormData(document.getElementById('editSeriesForm')); fetch("{% url 'seri_duzenle' %}", { method: 'POST', body: fd, headers: {'X-CSRFToken': '{{ csrf_token }}'} }).then(r=>r.json()).then(d=>{ if(d.status==='success') location.reload(); else alert("Hata: "+d.message); }); }
+</script>
+
+        <script>
+        // BİLDİRİM SİSTEMİ JS
+        function loadNotifications() {
+            const authStatus = document.getElementById('authStatus');
+            if(!authStatus || authStatus.value !== 'true') return;
+            fetch('/api/notifications/').then(r=>r.json()).then(d=> {
+                if(d.status === 'success') {
+                    const badge = document.getElementById('notifBadge');
+                    const list = document.getElementById('notifList');
+                    if(badge && list) {
+                        if(d.unread_count > 0) {
+                            badge.innerText = d.unread_count;
+                            badge.classList.remove('d-none');
+                        }
+                        let html = '<li><h6 class="dropdown-header">Bildirimler</h6></li>';
+                        if(d.notifications.length === 0) {
+                            html += '<li><span class="dropdown-item text-muted small">Bildirim yok.</span></li>';
+                        } else {
+                            d.notifications.forEach(n => {
+                                html += `<li><a class="dropdown-item text-wrap small ${n.is_read ? 'text-muted' : 'fw-bold'}" href="${n.link}" style="border-bottom: 1px solid var(--border-color, #eee); padding: 10px;"><i class="fa-solid fa-circle-info me-2 text-primary"></i>${n.message}<br><small class="text-secondary">${n.created_at}</small></a></li>`;
+                            });
+                        }
+                        list.innerHTML = html;
+                    }
+                }
+            }).catch(e => console.log(e));
+        }
+
+        function markNotificationsRead() {
+            const badge = document.getElementById('notifBadge');
+            if(badge && !badge.classList.contains('d-none')) {
+                const csrfToken = document.getElementById('csrfToken');
+                if(csrfToken) {
+                    fetch('/api/notifications/mark-read/', {method:'POST', headers:{'X-CSRFToken':csrfToken.value}});
+                    badge.classList.add('d-none');
+                    badge.innerText = '0';
+                }
+            }
+        }
+        document.addEventListener('DOMContentLoaded', loadNotifications);
+    </script>
+
+</body>
+</html>

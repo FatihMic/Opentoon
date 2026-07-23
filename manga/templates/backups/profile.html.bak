@@ -1,0 +1,323 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{{ user.username }} Profili - OpenToon</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <script>
+        (function() {
+            const getStoredTheme = () => localStorage.getItem('theme');
+            const getPreferredTheme = () => {
+                const storedTheme = getStoredTheme();
+                if (storedTheme) { return storedTheme; }
+                return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            };
+            const setTheme = theme => {
+                if (theme === 'auto') {
+                    document.documentElement.setAttribute('data-bs-theme', (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+                } else {
+                    document.documentElement.setAttribute('data-bs-theme', theme);
+                }
+            };
+            setTheme(getPreferredTheme());
+        })();
+    </script>
+
+    <style>
+        :root {
+            --primary: #8a2be2; --primary-hover: #9d50e5; --accent: #ffae00; 
+            --bg-body: #121212; --bg-nav: #181818; --bg-card: #1e1e1e; --bg-input: #252525; --bg-footer: #0e0e0e; 
+            --text-main: #f0f0f0; --text-muted: #a0a0a0; --border: #2d2d2d;
+        }
+        [data-bs-theme="light"] {
+            --bg-body: #f0f2f5; --bg-nav: #ffffff; --bg-card: #ffffff; --bg-input: #e9ecef; --bg-footer: #e4e6eb;
+            --text-main: #1a1a1a; --text-muted: #666; --border: #dee2e6;
+        }
+        
+        body { background-color: var(--bg-body); color: var(--text-main); font-family: 'Inter', sans-serif; padding-bottom: 50px; }
+        h1, h2, h3, h4, h5, h6 { font-family: 'Outfit', sans-serif; }
+        
+        /* BANNER & HEADER */
+        .profile-banner {
+            height: 250px; width: 100%;
+            background: linear-gradient(45deg, var(--bg-nav), var(--primary), var(--bg-body));
+            background-size: 300% 300%; animation: gradientBanner 10s ease infinite;
+            position: relative; opacity: 0.8;
+        }
+        @keyframes gradientBanner { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        
+        .profile-banner::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, var(--bg-body), transparent); }
+        
+        .profile-container { margin-top: -80px; position: relative; z-index: 10; padding: 0 15px; }
+        .avatar-container { position: relative; display: inline-block; margin-bottom: 15px; }
+        .profile-avatar { width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 5px solid var(--bg-body); box-shadow: 0 10px 25px rgba(0,0,0,0.15); background: var(--bg-card); }
+        
+        .home-btn { position: absolute; top: 20px; left: 20px; z-index: 20; background: color-mix(in srgb, var(--bg-card) 60%, transparent); backdrop-filter: blur(10px); color: var(--text-main); border: 1px solid var(--border); border-radius: 30px; padding: 8px 20px; text-decoration: none; font-weight: 600; transition: 0.3s; display: flex; align-items: center; gap: 8px; font-family: 'Outfit', sans-serif;}
+        .home-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+        .glass-card { 
+            background-color: color-mix(in srgb, var(--bg-card) 85%, transparent); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border); border-radius: 20px; padding: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.05); transition: 0.3s;
+        }
+        
+        /* FORM START */
+        .form-control { background-color: var(--bg-input); border: 1px solid var(--border); color: var(--text-main) !important; padding: 12px 15px; border-radius: 12px; transition: 0.3s; font-size: 1rem; }
+        .form-control:focus { background-color: var(--bg-card); border-color: var(--primary); box-shadow: 0 0 10px rgba(138,43,226, 0.15); color: var(--text-main); transform: translateY(-1px); }
+        label { font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 10px; margin-bottom: 5px; }
+        .helptext { display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 10px; }
+        .btn-save { background: linear-gradient(45deg, var(--primary), var(--primary-hover)); border: none; padding: 12px; border-radius: 12px; font-weight: 700; color: #fff; width: 100%; margin-top: 20px; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px;}
+        .btn-save:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(138,43,226, 0.3); }
+
+        /* LISTELER */
+        .history-item { 
+            background: var(--bg-input); border: 1px solid var(--border); 
+            border-radius: 14px; padding: 15px 20px; margin-bottom: 12px; transition: 0.3s;
+            display: flex; justify-content: space-between; align-items: center; text-decoration: none;
+        }
+        .history-item:hover { background: color-mix(in srgb, var(--primary) 10%, transparent); border-color: var(--primary); transform: translateX(5px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .series-title { color: var(--text-main); font-weight: 700; font-size: 1.1rem; margin-bottom: 2px; font-family: 'Outfit', sans-serif;}
+        .chapter-info { color: var(--text-muted); font-size: 0.85rem; font-weight: 500; }
+        .badge-continue { background: color-mix(in srgb, var(--primary) 15%, transparent); color: var(--primary); border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent); padding: 5px 15px; border-radius: 20px; font-weight: 600; font-size: 0.8rem; transition: 0.3s; }
+        .history-item:hover .badge-continue { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+        .fav-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; }
+        .fav-item { text-decoration: none; text-align: center; transition: 0.3s; display: block; }
+        .fav-item:hover { transform: translateY(-5px); }
+        .fav-img { width: 100%; aspect-ratio: 2/3; object-fit: cover; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); border: 1px solid var(--border); }
+        .fav-title { color: var(--text-main); font-size: 0.85rem; font-weight: 600; margin-top: 8px; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.0.0/css/flag-icons.min.css"/>
+</head>
+<body>
+    
+    <div class="profile-banner">
+        <a href="{% url 'home' %}" class="home-btn"><i class="fa-solid fa-arrow-left"></i> Ana Sayfa</a>
+    </div>
+
+    <div class="container profile-container">
+        <div class="text-center mb-5">
+            <div class="avatar-container">
+                <img src="{{ user.profile.avatar_url }}" class="profile-avatar" alt="Profil Resmi">
+            </div>
+            <h2 class="fw-bold m-0" style="font-size: 2.2rem; color: var(--text-main);">{{ user.username }}</h2>
+            <p class="mt-2" style="font-size: 1.1rem; color: var(--text-muted);">{{ user.profile.bio|default:"Merhaba, ben bir OpenToon okuyucusuyum." }}</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="glass-card h-100">
+                    <h5 class="fw-bold mb-4" style="color: var(--text-main);"><i class="fa-solid fa-user-pen me-2" style="color: var(--primary);"></i> Hesap Ayarları</h5>
+                    <form method="post" enctype="multipart/form-data" id="profileForm">
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            <h6 class="pb-2 mb-3 font-outfit" style="color: var(--text-main); border-bottom: 1px solid var(--border);">Gizlilik</h6>
+                            {{ u_form.as_p }}
+                        </div>
+                        <div class="mb-3">
+                            <h6 class="pb-2 mb-3 font-outfit" style="color: var(--text-main); border-bottom: 1px solid var(--border);">Profil Detayı</h6>
+                            {{ p_form.as_p }}
+                        </div>
+                        <button class="btn-save" id="saveProfileBtn" type="submit">Değişiklikleri Kaydet <i class="fa-solid fa-check ms-1"></i></button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="col-lg-8 d-flex flex-column gap-4">
+                <!-- Okuma Geçmişi -->
+                <div class="glass-card">
+                    <h5 class="fw-bold mb-4" style="color: var(--text-main);"><i class="fa-solid fa-clock-rotate-left me-2 text-warning"></i> Son Okunanlar</h5>
+                    <div class="history-list">
+                        {% for kayit in okuma_gecmisi %}
+                            <a href="{% url 'manga_oku' kayit.series.slug kayit.last_chapter.number|stringformat:'g' %}?page={{ kayit.page_number }}" class="history-item">
+                                <div>
+                                    <div class="series-title">{{ kayit.series.title }}</div>
+                                    <div class="chapter-info"><i class="fa-solid fa-book-open me-1" style="opacity: 0.7;"></i> Bölüm {{ kayit.last_chapter.number|floatformat }} • Sayfa {{ kayit.page_number }}</div>
+                                </div>
+                                <div class="badge-continue">Kaldığın Yerden Devam</div>
+                            </a>
+                        {% empty %}
+                            <div class="text-center py-5" style="color: var(--text-muted); opacity: 0.7;">
+                                <i class="fa-solid fa-ghost fs-1 mb-3"></i>
+                                <p>Henüz okunmuş hiçbir serin yok.</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Listem (Favoriler) -->
+                <div class="glass-card flex-grow-1">
+                    <h5 class="fw-bold mb-4" style="color: var(--text-main);"><i class="fa-solid fa-bookmark me-2 text-primary"></i> Listem (Kaydettiklerim)</h5>
+                    <div class="fav-grid">
+                        {% for seri in begendikleri %}
+                            <a href="{% url 'manga_detay' seri.slug %}" class="fav-item">
+                                {% if seri.cover_image %}
+                                    <img src="{{ seri.cover_image.url }}" class="fav-img">
+                                {% else %}
+                                    <div class="fav-img bg-secondary d-flex align-items-center justify-content-center">
+                                        <i class="fa-solid fa-image fa-2x opacity-50 text-white"></i>
+                                    </div>
+                                {% endif %}
+                                <div class="fav-title">{{ seri.title }}</div>
+                            </a>
+                        {% empty %}
+                            <div style="grid-column: 1 / -1;" class="text-center py-4" style="color: var(--text-muted); opacity: 0.7;">
+                                <p>Listene henüz hiç seri eklemedin.</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Bildirimler ve Şikayetler -->
+                <div class="glass-card">
+                    <h5 class="fw-bold mb-4" style="color: var(--text-main);"><i class="fa-solid fa-headset me-2 text-info"></i> Bildirim & Şikayetlerim</h5>
+                    <div class="history-list">
+                        {% for fb in bildirimler %}
+                        <div class="p-3 mb-3" style="background: var(--bg-input); border: 1px solid var(--border); border-radius: 14px;">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <strong style="color: var(--text-main);"><i class="fa-solid fa-tag text-muted me-1"></i> {{ fb.get_type_display }}</strong>
+                                <span class="badge {% if fb.is_resolved %}bg-success{% else %}bg-warning text-dark{% endif %}" style="font-size: 0.8rem; padding: 5px 10px;">
+                                    {% if fb.is_resolved %}Çözüldü <i class="fa-solid fa-check ms-1"></i>{% else %}Bekliyor <i class="fa-solid fa-hourglass-half ms-1"></i>{% endif %}
+                                </span>
+                            </div>
+                            <p class="small mb-3" style="color: var(--text-muted);">"{{ fb.message }}"<br><small style="opacity:0.6;">{{ fb.created_at|date:"d.m.Y H:i" }}</small></p>
+                            
+                            {% if fb.reply %}
+                            <div class="p-3 mt-2" style="background: color-mix(in srgb, var(--primary) 10%, transparent); border-left: 4px solid var(--primary); border-radius: 0 8px 8px 0;">
+                                <small class="fw-bold" style="color: var(--primary);"><i class="fa-solid fa-user-shield me-1"></i> Yönetici Yanıtı:</small>
+                                <p class="small mb-0 mt-1" style="color: var(--text-main);">{{ fb.reply }}</p>
+                                <small style="color: var(--text-muted); opacity:0.6;">{{ fb.replied_at|date:"d.m.Y H:i" }}</small>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-4" style="color: var(--text-muted); opacity: 0.7;">
+                            <i class="fa-solid fa-comment-dots fs-1 mb-3"></i>
+                            <p>Henüz bir şikayet veya öneride bulunmadınız.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.querySelectorAll('input').forEach(i => {
+            if(i.type !== 'checkbox' && i.type !== 'file') i.classList.add('form-control');
+        });
+        document.querySelectorAll('textarea').forEach(t => t.classList.add('form-control'));
+    </script>
+
+        <script>
+        // BİLDİRİM SİSTEMİ JS
+        function loadNotifications() {
+            const authStatus = document.getElementById('authStatus');
+            if(!authStatus || authStatus.value !== 'true') return;
+            fetch('/api/notifications/').then(r=>r.json()).then(d=> {
+                if(d.status === 'success') {
+                    const badge = document.getElementById('notifBadge');
+                    const list = document.getElementById('notifList');
+                    if(badge && list) {
+                        if(d.unread_count > 0) {
+                            badge.innerText = d.unread_count;
+                            badge.classList.remove('d-none');
+                        }
+                        let html = '<li><h6 class="dropdown-header">Bildirimler</h6></li>';
+                        if(d.notifications.length === 0) {
+                            html += '<li><span class="dropdown-item text-muted small">Bildirim yok.</span></li>';
+                        } else {
+                            d.notifications.forEach(n => {
+                                html += `<li><a class="dropdown-item text-wrap small ${n.is_read ? 'text-muted' : 'fw-bold'}" href="${n.link}" style="border-bottom: 1px solid var(--border-color, #eee); padding: 10px;"><i class="fa-solid fa-circle-info me-2 text-primary"></i>${n.message}<br><small class="text-secondary">${n.created_at}</small></a></li>`;
+                            });
+                        }
+                        list.innerHTML = html;
+                    }
+                }
+            }).catch(e => console.log(e));
+        }
+
+        function markNotificationsRead() {
+            const badge = document.getElementById('notifBadge');
+            if(badge && !badge.classList.contains('d-none')) {
+                const csrfToken = document.getElementById('csrfToken');
+                if(csrfToken) {
+                    fetch('/api/notifications/mark-read/', {method:'POST', headers:{'X-CSRFToken':csrfToken.value}});
+                    badge.classList.add('d-none');
+                    badge.innerText = '0';
+                }
+            }
+        }
+        document.addEventListener('DOMContentLoaded', loadNotifications);
+    </script>
+    
+    <!-- YÜKLEME FİLTRESİ İÇİN TENSORFLOW (YAPAY ZEKA) + NSFWJS -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.7.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/nsfwjs@2.3.0/dist/nsfwjs.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let nsfwModel = null;
+            
+            // Yapay zekayı arka planda sessizce yükle
+            nsfwjs.load().then(model => {
+                nsfwModel = model;
+                console.log("NSFW AI Model loaded and ready.");
+            }).catch(e => console.error("Could not load NSFW Model:", e));
+
+            const avatarInput = document.querySelector('input[type="file"]');
+            const submitBtn = document.getElementById('saveProfileBtn');
+
+            if(avatarInput) {
+                avatarInput.addEventListener('change', function(e) {
+                    if(!nsfwModel) return; // Model yüklenemediyse normal devam et
+                    
+                    const file = e.target.files[0];
+                    if(!file) return;
+
+                    const imgElement = new Image();
+                    imgElement.src = URL.createObjectURL(file);
+                    
+                    imgElement.onload = async function() {
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = "Fotoğraf Analiz Ediliyor... <i class='fa-solid fa-spinner fa-spin ms-1'></i>";
+                        
+                        try {
+                            // Resmi incele
+                            const predictions = await nsfwModel.classify(imgElement);
+                            let isNsfw = false;
+                            
+                            // Olasılıklara bak (Hentai veya Pornografik ise)
+                            predictions.forEach(p => {
+                                if((p.className === 'Porn' || p.className === 'Hentai' || p.className === 'Sexy') && p.probability > 0.65) {
+                                    isNsfw = true;
+                                }
+                            });
+
+                            if(isNsfw) {
+                                alert('⚠️ UYARI: Seçtiğiniz fotoğrafta UYGUNSUZ (+18) İÇERİK tespit edildi! \nLütfen site kurallarına uygun başka bir fotoğraf seçin.');
+                                avatarInput.value = ''; // Inputu temizle
+                                submitBtn.disabled = false;
+                                submitBtn.innerHTML = "Değişiklikleri Kaydet <i class='fa-solid fa-check ms-1'></i>";
+                            } else {
+                                submitBtn.disabled = false;
+                                submitBtn.innerHTML = "Değişiklikleri Kaydet <i class='fa-solid fa-check ms-1'></i>";
+                            }
+                        } catch(err) {
+                            console.error(err);
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = "Değişiklikleri Kaydet <i class='fa-solid fa-check ms-1'></i>";
+                        }
+                    };
+                });
+            }
+        });
+    </script>
+</body>
+</html>

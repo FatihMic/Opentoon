@@ -1,0 +1,476 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tüm Seriler - OpenToon</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        // Sayfa yüklenirken tema ayarını uygula
+        (function() {
+            const getStoredTheme = () => localStorage.getItem('theme');
+            const getPreferredTheme = () => {
+                const storedTheme = getStoredTheme();
+                if (storedTheme) { return storedTheme; }
+                return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            };
+            const setTheme = theme => {
+                if (theme === 'auto') {
+                    document.documentElement.setAttribute('data-bs-theme', (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+                } else {
+                    document.documentElement.setAttribute('data-bs-theme', theme);
+                }
+            };
+            setTheme(getPreferredTheme());
+        })();
+    </script>
+
+    <style>
+        /* --- PREMIUM TEMA DEĞİŞKENLERİ --- */
+        :root { 
+            --primary: #7248f9; --primary-hover: #5b32e0; --bg-body: #0f0f12; 
+            --card-bg: #18181c; --text-main: #ffffff; --text-muted: #a0a0a0; 
+            --border-color: #2d2d35; --shadow-card: 0 10px 30px rgba(0,0,0,0.4); 
+            --nav-bg: rgba(15, 15, 18, 0.95); --glass-bg: rgba(24, 24, 28, 0.7);
+        }
+        [data-bs-theme="light"] { 
+            --bg-body: #f4f7f6; --card-bg: #ffffff; --text-main: #2d3436; 
+            --text-muted: #636e72; --border-color: #e0e0e0; --nav-bg: rgba(255, 255, 255, 0.95);
+            --shadow-card: 0 10px 30px rgba(0,0,0,0.08); --glass-bg: rgba(255, 255, 255, 0.8);
+        }
+        
+        body { background-color: var(--bg-body); color: var(--text-main); font-family: 'Inter', sans-serif; padding-top: 90px; transition: 0.3s; }
+        
+        /* NAVBAR */
+        .navbar { background-color: var(--nav-bg); border-bottom: 1px solid var(--border-color); backdrop-filter: blur(12px); padding: 15px 0; }
+        .navbar-brand { font-weight: 800; color: var(--text-main) !important; letter-spacing: -0.5px; font-size: 1.4rem; }
+        
+        /* TEMA MENÜSÜ */
+        .dropdown-menu { background-color: var(--card-bg); border: 1px solid var(--border-color); }
+        .dropdown-item { color: var(--text-main); font-weight: 500; padding: 8px 16px; border-radius: 6px; }
+        .dropdown-item:hover { background-color: rgba(114, 72, 249, 0.1); color: var(--primary); }
+        .dropdown-item.active { background-color: var(--primary); color: #fff; }
+
+        /* FİLTRE KARTI (CAM EFEKTİ) */
+        .filter-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 25px;
+            position: sticky;
+            top: 100px;
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow-card);
+        }
+        .filter-group { margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color); }
+        .filter-group:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .filter-title { font-size: 0.75rem; font-weight: 800; margin-bottom: 15px; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; }
+        
+        /* KÜTÜPHANE SEKMELERİ (TABS) */
+        .library-tabs {
+            display: flex; gap: 10px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 5px; border-bottom: 1px solid var(--border-color);
+        }
+        .library-tabs::-webkit-scrollbar { height: 4px; }
+        .library-tabs::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        
+        .lib-tab {
+            padding: 12px 20px; border-radius: 12px 12px 0 0; font-weight: 700; color: var(--text-muted);
+            text-decoration: none; display: flex; align-items: center; gap: 8px; font-size: 0.95rem;
+            transition: 0.3s; white-space: nowrap; border-bottom: 3px solid transparent;
+        }
+        .lib-tab:hover { color: var(--text-main); background: rgba(255,255,255,0.03); }
+        .lib-tab.active { color: var(--primary); border-bottom-color: var(--primary); background: linear-gradient(to top, rgba(114,72,249,0.1) 0%, transparent 100%); }
+
+        /* Form Elemanları */
+        .form-control, .form-select {
+            background-color: var(--bg-body) !important;
+            border: 1px solid var(--border-color) !important;
+            color: var(--text-main) !important;
+            border-radius: 8px; padding: 10px;
+            font-size: 0.9rem;
+        }
+        .form-control:focus, .form-select:focus { border-color: var(--primary) !important; box-shadow: 0 0 0 3px rgba(114, 72, 249, 0.15); }
+
+        /* Özel Checkbox/Radio */
+        .form-check { margin-bottom: 8px; display: flex; align-items: center; }
+        .form-check-input {
+            background-color: var(--bg-body); border-color: var(--border-color); 
+            cursor: pointer; width: 18px; height: 18px; margin-right: 10px;
+            border-radius: 4px;
+        }
+        .form-check-input:checked {
+            background-color: var(--primary); border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(114, 72, 249, 0.4);
+        }
+        .form-check-label { cursor: pointer; font-size: 0.95rem; color: var(--text-main); font-weight: 500; }
+
+        /* MANGA KARTI (YENİ NESİL) */
+        .manga-card { 
+            border-radius: 16px; overflow: hidden; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative; background: transparent;
+        }
+        .manga-card:hover { transform: translateY(-8px); }
+        
+        .card-img-wrapper { 
+            height: 320px; overflow: hidden; position: relative; border-radius: 16px;
+            box-shadow: var(--shadow-card);
+        }
+        .card-img-top { 
+            width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease;
+        }
+        .manga-card:hover .card-img-top { transform: scale(1.1); }
+        
+        /* Kart Üzerindeki Bilgiler (Gradient Overlay) */
+        .card-overlay {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 60%, transparent 100%);
+            padding: 20px 15px;
+            display: flex; flex-direction: column; justify-content: flex-end;
+            height: 100%; pointer-events: none;
+        }
+        
+        .card-badges { position: absolute; top: 15px; left: 15px; z-index: 2; display: flex; flex-direction: column; gap: 5px; }
+        .badge-type { 
+            background: rgba(0,0,0,0.6); color: #fff; padding: 5px 10px; 
+            border-radius: 8px; font-size: 0.7rem; backdrop-filter: blur(8px); 
+            border: 1px solid rgba(255,255,255,0.1); font-weight: 700; letter-spacing: 0.5px;
+            width: fit-content;
+        }
+        
+        /* YENİ: DURUM ROZETLERİ */
+        .badge-status {
+            padding: 5px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.5px; width: fit-content; color: #fff;
+        }
+        .badge-final { background: #ff4d4d; box-shadow: 0 2px 10px rgba(255, 77, 77, 0.4); }
+        .badge-devam { background: #2ecc71; box-shadow: 0 2px 10px rgba(46, 204, 113, 0.4); }
+        .badge-ara { background: #f39c12; box-shadow: 0 2px 10px rgba(243, 156, 18, 0.4); }
+        
+        .manga-title { 
+            font-size: 1.1rem; font-weight: 700; margin-bottom: 5px; color: #fff;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5); line-height: 1.3;
+        }
+        
+        .manga-meta {
+            display: flex; align-items: center; gap: 15px; font-size: 0.8rem; color: rgba(255,255,255,0.8);
+        }
+        
+        /* Kullanıcı Menüsü */
+        .user-name-text { color: var(--text-main); font-weight: 700; font-size: 0.95rem; margin-right: 8px; }
+        .filter-btn-submit {
+            background: var(--primary); border: none; padding: 12px; font-weight: 700; letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(114, 72, 249, 0.3); transition: 0.3s;
+        }
+        .filter-btn-submit:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(114, 72, 249, 0.4); }
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.0.0/css/flag-icons.min.css"/>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg fixed-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="{% url 'home' %}">
+                <i class="fa-solid fa-arrow-left me-3 text-muted" style="font-size: 1.2rem;"></i> 
+                <span>OPEN<span style="color: var(--primary);">TOON</span></span>
+            </a>
+
+            <div class="d-flex align-items-center gap-3">
+                <!-- Tema Butonu Kaldırıldı (Ana sayfadan yönetiliyor) -->
+                {% if user.is_authenticated %}
+                    <!-- BİLDİRİM ZİLİ -->
+                    <div class="dropdown me-5 pe-3" id="notifDropdown" style="margin-right: 15px;">
+                       <a href="#" class="position-relative text-decoration-none" data-bs-toggle="dropdown" onclick="markNotificationsRead()">
+                           <i class="fa-solid fa-bell fs-4" style="color: var(--text-muted); transition: 0.2s;" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='var(--text-muted)'"></i>
+                           <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" id="notifBadge" style="font-size: 0.65rem;">0</span>
+                       </a>
+                       <ul class="dropdown-menu dropdown-menu-end shadow mt-3 border-0" style="width: 320px; max-height: 400px; overflow-y: auto;" id="notifList">
+                           <li><h6 class="dropdown-header">Bildirimler</h6></li>
+                       </ul>
+                    </div>
+
+                    <div class="dropdown">
+                        <a href="#" class="d-flex align-items-center gap-2 text-decoration-none" data-bs-toggle="dropdown">
+                            {% if user.profile.avatar %}
+                                <img src="{{ user.profile.avatar_url }}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); padding: 2px;">
+                            {% else %}
+                                <div style="width:40px; height:40px; border-radius:50%; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:bold;">
+                                    {{ user.username|make_list|first|upper }}
+                                </div>
+                            {% endif %}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
+                            <li><h6 class="dropdown-header" style="color:var(--text-muted)">@{{ user.username }}</h6></li>
+                            <li><a class="dropdown-item" href="{% url 'profil' %}"><i class="fa-solid fa-user me-2"></i>Profilim</a></li>
+                            <li><hr class="dropdown-divider" style="border-color:var(--border-color)"></li>
+                            <li><form action="{% url 'logout' %}" method="post">{% csrf_token %}<button class="dropdown-item text-danger"><i class="fa-solid fa-right-from-bracket me-2"></i>Çıkış</button></form></li>
+                        </ul>
+                    </div>
+                {% else %}
+                    <a href="{% url 'login' %}" class="btn btn-primary rounded-pill px-4 fw-bold btn-sm">Giriş</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+        <div class="row">
+            
+            <div class="col-lg-3 mb-4">
+                <form action="{% url 'tum_seriler' %}" method="GET">
+                    <div class="filter-card">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h5 class="fw-bold m-0" style="color: var(--text-main); font-size: 1.1rem;"><i class="fa-solid fa-sliders me-2 text-primary"></i>Filtreler</h5>
+                            <a href="{% url 'tum_seriler' %}" class="text-danger small text-decoration-none fw-bold"><i class="fa-solid fa-rotate-left me-1"></i>Sıfırla</a>
+                        </div>
+
+                        <div class="filter-group">
+                            <input type="text" name="q" class="form-control" placeholder="Seri adı ara..." value="{{ query|default:'' }}">
+                        </div>
+
+                        <div class="filter-group">
+                            <div class="filter-title">Seri Türü</div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="tur" value="hepsi" id="tur_hepsi" {% if not secili_tur or secili_tur == 'hepsi' %}checked{% endif %}>
+                                <label class="form-check-label" for="tur_hepsi">Tümü</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="tur" value="webtoon" id="tur_webtoon" {% if secili_tur == 'webtoon' %}checked{% endif %}>
+                                <label class="form-check-label" for="tur_webtoon">Webtoon (Kore)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="tur" value="manga" id="tur_manga" {% if secili_tur == 'manga' %}checked{% endif %}>
+                                <label class="form-check-label" for="tur_manga">Manga (Japon)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="tur" value="manhwa" id="tur_manhwa" {% if secili_tur == 'manhwa' %}checked{% endif %}>
+                                <label class="form-check-label" for="tur_manga">Manhwa (Kore)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="tur" value="manhua" id="tur_manhua" {% if secili_tur == 'manhua' %}checked{% endif %}>
+                                <label class="form-check-label" for="tur_manhua">Manhua (Çin)</label>
+                            </div>
+                        </div>
+
+                        <div class="filter-group">
+                            <div class="filter-title">Seri Durumu</div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="durum" value="hepsi" id="durum_hepsi" {% if not secili_durum or secili_durum == 'hepsi' %}checked{% endif %}>
+                                <label class="form-check-label" for="durum_hepsi">Tümü</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="durum" value="devam" id="durum_devam" {% if secili_durum == 'devam' %}checked{% endif %}>
+                                <label class="form-check-label text-success fw-bold" for="durum_devam">Devam Ediyor</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="durum" value="tamamlandi" id="durum_tamamlandi" {% if secili_durum == 'tamamlandi' %}checked{% endif %}>
+                                <label class="form-check-label text-danger fw-bold" for="durum_tamamlandi">Final Yaptı</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="durum" value="ara" id="durum_ara" {% if secili_durum == 'ara' %}checked{% endif %}>
+                                <label class="form-check-label text-warning fw-bold" for="durum_ara">Ara Verildi</label>
+                            </div>
+                        </div>
+
+                        <div class="filter-group">
+                            <div class="filter-title">Kategoriler</div>
+                            <div style="max-height: 200px; overflow-y: auto; padding-right: 5px;">
+                                {% for kategori in kategoriler %}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="kategori" value="{{ kategori.slug }}" id="cat_{{ kategori.id }}"
+                                               {% if kategori.slug in secili_kategoriler %}checked{% endif %}>
+                                        <label class="form-check-label" for="cat_{{ kategori.id }}">
+                                            {{ kategori.name }}
+                                        </label>
+                                    </div>
+                                {% empty %}
+                                    <small class="text-muted">Kategori bulunamadı.</small>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="filter-group">
+                            <div class="filter-title">Sıralama</div>
+                            <select name="sirala" class="form-select">
+                                <option value="yeni" {% if secili_sirala == 'yeni' %}selected{% endif %}>En Yeni Eklenenler</option>
+                                <option value="populer" {% if secili_sirala == 'populer' %}selected{% endif %}>En Çok Okunanlar</option>
+                                <option value="puan" {% if secili_sirala == 'puan' %}selected{% endif %}>En Yüksek Puanlılar</option>
+                                <option value="eski" {% if secili_sirala == 'eski' %}selected{% endif %}>En Eskiler</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 rounded-pill mt-2 filter-btn-submit">
+                            Sonuçları Göster
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="col-lg-9">
+                <!-- TÜM SERİLER SEKMELERİ -->
+                <div class="library-tabs">
+                    <a href="?tab=tum" class="lib-tab {% if aktif_tab == 'tum' %}active{% endif %}">
+                        <i class="fa-solid fa-layer-group"></i> Tüm Seriler
+                    </a>
+                    <a href="?tab=az" class="lib-tab {% if aktif_tab == 'az' %}active{% endif %}">
+                        <i class="fa-solid fa-font"></i> A-Z Listesi
+                    </a>
+                    <a href="?tab=tamamlanan" class="lib-tab {% if aktif_tab == 'tamamlanan' %}active{% endif %}">
+                        <i class="fa-solid fa-flag-checkered"></i> Tamamlanan Seriler
+                    </a>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-4 ps-2">
+                    <h4 class="fw-bold m-0" style="color: var(--text-main); font-size: 1.5rem;">
+                        {% if aktif_tab == 'az' %}A-Z Listesi{% elif aktif_tab == 'tamamlanan' %}Tamamlanan Seriler{% else %}Tüm Seriler{% endif %}
+                    </h4>
+                    <span class="badge bg-secondary rounded-pill px-3 py-2">{{ seriler|length }} Seri Bulundu</span>
+                </div>
+
+                <div class="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-4">
+                    {% for seri in seriler %}
+                    <div class="col">
+                        <div class="manga-card">
+                            <a href="{% url 'manga_detay' seri.slug %}" class="text-decoration-none">
+                                <div class="card-img-wrapper">
+                                    {% if seri.cover_image %}
+                                        <img src="{{ seri.cover_image.url }}" class="card-img-top" loading="lazy">
+                                    {% else %}
+                                        <div class="d-flex align-items-center justify-content-center h-100 bg-secondary text-white">
+                                            <i class="fa-solid fa-image fa-3x opacity-50"></i>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <div class="card-badges">
+                                        <span class="badge-type">{{ seri.type|upper }}</span>
+                                        {% if seri.status == 'tamamlandi' %}
+                                            <span class="badge-status badge-final">FİNAL</span>
+                                        {% elif seri.status == 'ara' %}
+                                            <span class="badge-status badge-ara">ARA VERDİ</span>
+                                        {% else %}
+                                            <span class="badge-status badge-devam">DEVAM</span>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="card-overlay">
+                                        <h5 class="manga-title">{{ seri.title }}</h5>
+                                        <div class="manga-meta">
+                                            <span><i class="fa-solid fa-star text-warning me-1"></i>{{ seri.average_rating }}</span>
+                                            <span><i class="fa-solid fa-eye text-primary me-1"></i>{{ seri.views }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12 text-center py-5">
+                        <div class="opacity-50 mt-5">
+                            <i class="fa-solid fa-filter-circle-xmark fa-4x mb-3 text-muted"></i>
+                            <h4 style="color: var(--text-main); font-weight: 700;">Sonuç Bulunamadı</h4>
+                            <p class="text-muted">Seçtiğiniz kriterlere uygun seri yok. Filtreleri değiştirmeyi deneyin.</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // --- TEMA YÖNETİMİ (3 SEÇENEKLİ - ORTAK KOD) ---
+        (() => {
+            'use strict'
+            const getStoredTheme = () => localStorage.getItem('theme')
+            const setStoredTheme = theme => localStorage.setItem('theme', theme)
+            const getPreferredTheme = () => {
+                const storedTheme = getStoredTheme()
+                if (storedTheme) { return storedTheme }
+                return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+            }
+            const setTheme = theme => {
+                if (theme === 'auto') {
+                    document.documentElement.setAttribute('data-bs-theme', (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'))
+                } else {
+                    document.documentElement.setAttribute('data-bs-theme', theme)
+                }
+            }
+            setTheme(getPreferredTheme())
+            const showActiveTheme = (theme, focus = false) => {
+                const themeSwitcher = document.querySelector('#bd-theme')
+                const activeIcon = document.querySelector('#theme-icon-active')
+                if (!themeSwitcher) { return }
+                const iconMap = { 'light': 'fa-sun', 'dark': 'fa-moon', 'auto': 'fa-circle-half-stroke' }
+                const selectedIconClass = iconMap[theme] || 'fa-circle-half-stroke';
+                activeIcon.className = `fa-solid ${selectedIconClass} fs-5`; // İkon boyutu
+                document.querySelectorAll('[data-bs-theme-value]').forEach(element => { element.classList.remove('active') })
+                const btnToActive = document.querySelector(`[data-bs-theme-value="${theme}"]`)
+                if (btnToActive) { btnToActive.classList.add('active') }
+            }
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+                const storedTheme = getStoredTheme()
+                if (storedTheme !== 'light' && storedTheme !== 'dark') { setTheme('auto') }
+            })
+            window.addEventListener('DOMContentLoaded', () => {
+                showActiveTheme(getStoredTheme() || 'auto')
+                document.querySelectorAll('[data-bs-theme-value]').forEach(toggle => {
+                    toggle.addEventListener('click', () => {
+                        const theme = toggle.getAttribute('data-bs-theme-value')
+                        setStoredTheme(theme)
+                        setTheme(theme)
+                        showActiveTheme(theme, true)
+                    })
+                })
+            })
+        })()
+    </script>
+
+        <script>
+        // BİLDİRİM SİSTEMİ JS
+        function loadNotifications() {
+            const authStatus = document.getElementById('authStatus');
+            if(!authStatus || authStatus.value !== 'true') return;
+            fetch('/api/notifications/').then(r=>r.json()).then(d=> {
+                if(d.status === 'success') {
+                    const badge = document.getElementById('notifBadge');
+                    const list = document.getElementById('notifList');
+                    if(badge && list) {
+                        if(d.unread_count > 0) {
+                            badge.innerText = d.unread_count;
+                            badge.classList.remove('d-none');
+                        }
+                        let html = '<li><h6 class="dropdown-header">Bildirimler</h6></li>';
+                        if(d.notifications.length === 0) {
+                            html += '<li><span class="dropdown-item text-muted small">Bildirim yok.</span></li>';
+                        } else {
+                            d.notifications.forEach(n => {
+                                html += `<li><a class="dropdown-item text-wrap small ${n.is_read ? 'text-muted' : 'fw-bold'}" href="${n.link}" style="border-bottom: 1px solid var(--border-color, #eee); padding: 10px;"><i class="fa-solid fa-circle-info me-2 text-primary"></i>${n.message}<br><small class="text-secondary">${n.created_at}</small></a></li>`;
+                            });
+                        }
+                        list.innerHTML = html;
+                    }
+                }
+            }).catch(e => console.log(e));
+        }
+
+        function markNotificationsRead() {
+            const badge = document.getElementById('notifBadge');
+            if(badge && !badge.classList.contains('d-none')) {
+                const csrfToken = document.getElementById('csrfToken');
+                if(csrfToken) {
+                    fetch('/api/notifications/mark-read/', {method:'POST', headers:{'X-CSRFToken':csrfToken.value}});
+                    badge.classList.add('d-none');
+                    badge.innerText = '0';
+                }
+            }
+        }
+        document.addEventListener('DOMContentLoaded', loadNotifications);
+    </script>
+
+</body>
+</html>
