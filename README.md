@@ -83,5 +83,6 @@ Uygulamaya tarayıcınızdan `http://127.0.0.1:8000/` adresinden ulaşabilirsini
 
 ---
 
-## 📝 Lisans
-Bu proje açık kaynaklıdır. Dilediğiniz gibi geliştirebilir ve özelleştirebilirsiniz.
+## 📝 License
+
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
