@@ -7,7 +7,6 @@ Modern ve dinamik bir **Manga / Webtoon Okuma Platformu** web uygulaması. Djang
 ## 🚀 Özellikler
 
 - 📖 **Manga ve Webtoon Okuma Modu:** Kesintisiz ve responsive okuma deneyimi.
-- 🔑 **Google ile Giriş (OAuth):** `django-allauth` entegrasyonu ile hızlı ve güvenli kullanıcı girişi.
 - 🎨 **Modern Arayüz:** Kullanıcı dostu dinamik tasarım ve bölüm takip sistemleri.
 - 📧 **E-posta Bildirim Hizmeti:** Şifre sıfırlama ve duyurular için Gmail SMTP desteği.
 - 🛠️ **Güvenli Çevre Yapılandırması:** `.env` ile gizli anahtarların korunması.
